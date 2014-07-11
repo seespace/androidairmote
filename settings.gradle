@@ -1,0 +1,4 @@
+include ':app'
+
+include ':proto'
+project(':proto').projectDir = new File('../../system/eventcenter/proto')
