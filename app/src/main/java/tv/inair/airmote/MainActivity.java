@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.InputType;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -21,13 +22,17 @@ import java.net.UnknownHostException;
 
 public class MainActivity extends Activity {
 
-  private static final String SERVER_IP_KEY = "SERVERIDKEY";
+  private static final String SERVER_IP_KEY = "AIRSERVERIPKEY";
   private Client mClient;
   private Socket mSocket;
   private String mServerIp;
+  private Handler mHandler;
+
   private boolean isDialogDisplaying = false;
+  public static final int MAX_RECONNECT_ATTEMPTS = 3;
 
   private static final int SERVER_PORT = 8989;
+  private tv.inair.airmote.ClientDelegate mClientDelegate;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +41,14 @@ public class MainActivity extends Activity {
 
     if (mGestureDetector == null) {
       mGestureDetector = new GestureDetector(this, mGestureListener);
+    }
+
+    if (mClientDelegate == null) {
+      mClientDelegate = new ClientDelegate();
+    }
+
+    if (mHandler == null) {
+      mHandler = new Handler();
     }
   }
 
@@ -79,6 +92,12 @@ public class MainActivity extends Activity {
   }
 
   private void initConnection() {
+    initConnection(false);
+  }
+
+  static int _reconnectAttempNum = 0;
+
+  private void initConnection(boolean force) {
     SharedPreferences settings = getPreferences(MODE_PRIVATE);
     mServerIp = settings.getString(SERVER_IP_KEY, "");
 
@@ -86,7 +105,15 @@ public class MainActivity extends Activity {
       return;
     }
 
-    if (mServerIp.isEmpty()) {
+    if (_reconnectAttempNum >= MAX_RECONNECT_ATTEMPTS) {
+      force = true;
+    }
+
+    if (mServerIp.isEmpty() || (force && !isDialogDisplaying)) {
+      if (!force) {
+        _reconnectAttempNum++;
+      }
+
       AlertDialog.Builder builder = new AlertDialog.Builder(this);
       builder.setTitle("AirServer");
 
@@ -95,7 +122,6 @@ public class MainActivity extends Activity {
 
       input.setInputType(InputType.TYPE_CLASS_TEXT);
       input.setHint("inair.local or 127.0.0.1");
-
 
       builder.setView(input);
 
@@ -117,6 +143,13 @@ public class MainActivity extends Activity {
         @Override
         public void onClick(DialogInterface dialog, int which) {
           dialog.cancel();
+        }
+      });
+
+      builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+        @Override
+        public void onCancel(DialogInterface dialog) {
           isDialogDisplaying = false;
         }
       });
@@ -125,6 +158,40 @@ public class MainActivity extends Activity {
       isDialogDisplaying = true;
     } else {
       new ConnectTask().execute();
+    }
+  }
+
+
+  void displayMessage(String msg) {
+    if (!isDialogDisplaying) {
+      Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+    }
+  }
+
+  // Client Delegate
+  private class ClientDelegate implements tv.inair.airmote.ClientDelegate {
+
+    @Override
+    synchronized public void onExeptionRaised(final IOException e) {
+      mHandler.post(new Runnable() {
+        @Override
+        public void run() {
+          displayMessage(e.getLocalizedMessage());
+
+          if (mSocket != null && mSocket.isConnected()) {
+            try {
+              mSocket.close();
+            } catch (IOException e1) {
+              e1.printStackTrace();
+            }
+          }
+
+          mSocket = null;
+
+          initConnection(true);
+        }
+      });
+
     }
   }
 
@@ -148,6 +215,7 @@ public class MainActivity extends Activity {
         mSocket.setTcpNoDelay(true);
 
         mClient = new Client(MainActivity.this, mSocket);
+        mClient.setDelegate(mClientDelegate);
         mClient.registerDevice();
       } catch (UnknownHostException e1) {
         e1.printStackTrace();
@@ -164,7 +232,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onProgressUpdate(String... values) {
       mProgressHUD.setMessage(values[0]);
-      Toast.makeText(MainActivity.this, values[0], Toast.LENGTH_LONG).show();
+      displayMessage(values[0]);
       super.onProgressUpdate(values);
     }
 
@@ -178,7 +246,8 @@ public class MainActivity extends Activity {
         editor.putString(SERVER_IP_KEY, mServerIp);
         editor.commit();
 
-        Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show();
+        displayMessage("Connected");
+        _reconnectAttempNum = 0;
       }
 
       super.onPostExecute(result);

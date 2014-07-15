@@ -20,6 +20,8 @@ class Client {
 
   private DataOutputStream mWriter;
 
+  private ClientDelegate mDelegate;
+
   private static final int SWIPE_THRESHOLD = 100;
   private static final int SWIPE_VELOCITY_THRESHOLD = 100;
 
@@ -34,6 +36,14 @@ class Client {
     }
   }
 
+  public ClientDelegate getDelegate() {
+    return mDelegate;
+  }
+
+  public void setDelegate(ClientDelegate delegate) {
+    mDelegate = delegate;
+  }
+
   boolean isConnected() {
     return mSocket != null && mSocket.isConnected();
   }
@@ -45,6 +55,9 @@ class Client {
       mWriter.flush();
     } catch (IOException e) {
       e.printStackTrace();
+      if (mDelegate != null) {
+        mDelegate.onExeptionRaised(e);
+      }
     }
   }
 
