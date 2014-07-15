@@ -2,7 +2,9 @@
 
 Remote Control Application for InAir system (Android)
 
-### How do I get set up? ###
+### How to build? ###
+
+Note: You can download the prebuilt apk [here](http://developer.inair.tv/upload_file/attachment/airmote.apk)
 
 * Download source code. `git clone git@bitbucket.org:seespace/androidairmote.git`
 * In Android Studio, open it as a new project
