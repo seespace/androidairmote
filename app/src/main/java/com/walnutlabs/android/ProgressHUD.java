@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import tv.inair.airmote.R;
 
 public class ProgressHUD extends Dialog {
