@@ -13,6 +13,7 @@ import inair.eventcenter.proto.Proto;
 
 public class SocketClient {
   private static final int SERVER_PORT = 8989;
+  private static final String HOST_NAME_KEY = "#hostname";
 
   private Socket mSocket;
   private OnEventReceived mEventReceived;
@@ -39,6 +40,20 @@ public class SocketClient {
     onStateChanged(false, message);
   }
 
+  public void reconnectToLastHost() {
+    String lastHost = "";
+
+    System.out.println("SocketClient.reconnectToLastHost " + lastHost + " " + AiRMote.getTempPreferences().contains(HOST_NAME_KEY));
+
+    if (AiRMote.getTempPreferences().contains(HOST_NAME_KEY)) {
+      lastHost = AiRMote.getTempPreferences().getString(HOST_NAME_KEY, "");
+    }
+    if (lastHost.isEmpty()) {
+      return;
+    }
+    connectTo(lastHost);
+  }
+
   public void connectTo(String hostName) {
     if (isConnected() || (mConnectTask != null && mConnectTask.getStatus() == AsyncTask.Status.RUNNING)) {
       return;
@@ -52,7 +67,7 @@ public class SocketClient {
       return;
     }
     try {
-      mConnectTask.cancel(true);
+      mConnectTask.cancel(false);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -76,6 +91,7 @@ public class SocketClient {
     mReader = null;
     mWriter = null;
     mSocket = null;
+    System.out.println("SocketClient.disconnect");
   }
 
   public void sendEvent(Proto.Event e) {
@@ -120,17 +136,13 @@ public class SocketClient {
   private class ConnectTask extends AsyncTask<String, Data, Void> {
 
     @Override
-    protected void onPreExecute() {
-      super.onPreExecute();
-    }
-
-    @Override
     protected Void doInBackground(String... params) {
       try {
-        InetAddress serverAddr = InetAddress.getByName(params[0]);
-        mSocket = new Socket(serverAddr, SERVER_PORT);
+        InetAddress serverAddress = InetAddress.getByName(params[0]);
+        mSocket = new Socket(serverAddress, SERVER_PORT);
         mSocket.setTcpNoDelay(true);
-        publishProgress(new Data(null, true, null));
+
+        publishProgress(new Data(null, true, params[0]));
 
         mWriter = new DataOutputStream(mSocket.getOutputStream());
         mReader = new DataInputStream(mSocket.getInputStream());
@@ -148,14 +160,23 @@ public class SocketClient {
     }
 
     @Override
+    protected void onCancelled(Void aVoid) {
+      System.out.println("ConnectTask.onCancelled");
+    }
+
+    @Override
     protected void onProgressUpdate(Data... values) {
       Data data = values[0];
+      System.out.println("ConnectTask.onProgressUpdate " + data.connected + " " + data.message);
       if (data.event != null) {
         onEventReceived(data.event);
       } else {
         if (data.connected) {
-          onStateChanged(true, data.message);
+          // store current hostname
+          AiRMote.getTempPreferences().edit().putString(HOST_NAME_KEY, data.message).commit();
+          onStateChanged(true, null);
         } else {
+          AiRMote.getTempPreferences().edit().remove(HOST_NAME_KEY).commit();
           notifyDisconnect(data.message);
         }
       }

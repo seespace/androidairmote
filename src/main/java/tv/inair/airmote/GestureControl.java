@@ -50,7 +50,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       long now = Helper.now();
       if (mPanning) {
         Log.d(DEBUG_TAG, "pan: CANCELED");
-        AiRmote.getSocketClient().sendEvent(
+        AiRMote.getSocketClient().sendEvent(
             Helper.newPanEvent(
                 now,
                 event.getX(),
@@ -69,7 +69,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       }
       switch (event.getActionMasked()) {
         case MotionEvent.ACTION_MOVE:
-          AiRmote.getSocketClient().sendEvent(
+          AiRMote.getSocketClient().sendEvent(
               Helper.newLongPressEvent(
                   now,
                   event.getX(),
@@ -83,7 +83,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
           Log.d(DEBUG_TAG, "holding: CHANGED");
           break;
         case MotionEvent.ACTION_UP:
-          AiRmote.getSocketClient().sendEvent(
+          AiRMote.getSocketClient().sendEvent(
               Helper.newLongPressEvent(
                   now,
                   event.getX(),
@@ -101,7 +101,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       }
     } else if (mPanning && event.getActionMasked() == MotionEvent.ACTION_UP) {
       Log.d(DEBUG_TAG, "pan: ENDED");
-      AiRmote.getSocketClient().sendEvent(
+      AiRMote.getSocketClient().sendEvent(
           Helper.newPanEvent(
               Helper.now(),
               event.getX(),
@@ -127,7 +127,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       Log.d(DEBUG_TAG, "pan: BEGAN");
       mPanning = true;
       mLastMotion = event;
-      AiRmote.getSocketClient().sendEvent(
+      AiRMote.getSocketClient().sendEvent(
           Helper.newPanEvent(
               Helper.now(),
               event.getX(),
@@ -144,20 +144,6 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
     }
     return true;
   }
-
-//  private Proto.GestureEvent.State resolveState(MotionEvent event) {
-//    switch (event.getActionMasked()) {
-//      case MotionEvent.ACTION_CANCEL:
-//        return Proto.GestureEvent.State.CANCELLED;
-//      case MotionEvent.ACTION_MOVE:
-//        return Proto.GestureEvent.State.CHANGED;
-//      case MotionEvent.ACTION_DOWN:
-//        return Proto.GestureEvent.State.BEGAN;
-//      case MotionEvent.ACTION_UP:
-//        return Proto.GestureEvent.State.ENDED;
-//    }
-//    return Proto.GestureEvent.State.FAILED;
-//  }
 
   @Override
   public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
@@ -188,7 +174,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
 //    Log.d(DEBUG_TAG, "onFling: " + direction);
 
-    AiRmote.getSocketClient().sendEvent(
+    AiRMote.getSocketClient().sendEvent(
         Helper.newSwipeEvent(
             Helper.now(),
             e2.getX(),
@@ -210,7 +196,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
     mHolding = true;
     mLastTime = Helper.now();
-    AiRmote.getSocketClient().sendEvent(
+    AiRMote.getSocketClient().sendEvent(
         Helper.newLongPressEvent(
             mLastTime,
             event.getX(),
@@ -233,7 +219,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
     Log.d(DEBUG_TAG, "onPan: CHANGED");
     mLastMotion = e2;
 
-    AiRmote.getSocketClient().sendEvent(
+    AiRMote.getSocketClient().sendEvent(
         Helper.newPanEvent(
             Helper.now(),
             e2.getX(),
@@ -264,7 +250,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onDoubleTap(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onDoubleTap: ");
-    AiRmote.getSocketClient().sendEvent(
+    AiRMote.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),
@@ -286,7 +272,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onSingleTapConfirmed(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onSingleTapEvent: ");
-    AiRmote.getSocketClient().sendEvent(
+    AiRMote.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),

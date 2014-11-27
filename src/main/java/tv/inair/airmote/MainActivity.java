@@ -39,14 +39,6 @@ import inair.eventcenter.proto.Proto;
 
 public class MainActivity extends Activity implements OnEventReceived, OnSocketStateChanged {
 
-//  private SocketClient mSocketClient;
-//  private Socket mSocket;
-//  private String mServerIp;
-//  private Handler mHandler;
-//
-//  private boolean isDialogDisplaying = false;
-//  public static final int MAX_RECONNECT_ATTEMPTS = 3;
-
   private GestureControl mGestureControl;
 
   @Override
@@ -56,8 +48,12 @@ public class MainActivity extends Activity implements OnEventReceived, OnSocketS
 
     mGestureControl = new GestureControl(this, findViewById(R.id.rootView));
 
-    AiRmote.getSocketClient().setOnEventReceived(this);
-    AiRmote.getSocketClient().setOnSocketStateChanged(this);
+    AiRMote.getSocketClient().setOnEventReceived(this);
+    AiRMote.getSocketClient().setOnSocketStateChanged(this);
+
+    if (AiRMote.getSocketClient().isConnected()) {
+      Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+    }
   }
 
   @Override
@@ -82,7 +78,7 @@ public class MainActivity extends Activity implements OnEventReceived, OnSocketS
               public void onClick(DialogInterface dialogInterface, int i) {
                 CharSequence hostname = input.getText();
                 if (hostname.length() > 0) {
-                  AiRmote.getSocketClient().connectTo(hostname.toString());
+                  AiRMote.getSocketClient().connectTo(hostname.toString());
                 }
               }
             })
@@ -111,8 +107,16 @@ public class MainActivity extends Activity implements OnEventReceived, OnSocketS
   }
 
   @Override
+  protected void onStart() {
+    super.onStart();
+    if (!AiRMote.getSocketClient().isConnected()) {
+      AiRMote.getSocketClient().reconnectToLastHost();
+    }
+  }
+
+  @Override
   protected void onDestroy() {
     super.onDestroy();
-    AiRmote.getSocketClient().disconnect();
+    AiRMote.getSocketClient().disconnect();
   }
 }

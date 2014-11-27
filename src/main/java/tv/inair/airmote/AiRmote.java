@@ -1,6 +1,8 @@
 package tv.inair.airmote;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
 
 /**
  * <p>
@@ -11,7 +13,8 @@ import android.app.Application;
  * <p/>
  * <p>Copyright (c) 2014 SeeSpace.co. All rights reserved.</p>
  */
-public class AiRmote extends Application {
+public class AiRMote extends Application {
+  public static final String TEMP = "#temp";
   private static SocketClient socketClient;
 
   public static SocketClient getSocketClient() {
@@ -19,5 +22,17 @@ public class AiRmote extends Application {
       socketClient = new SocketClient();
     }
     return socketClient;
+  }
+
+  private static SharedPreferences tempPreferences;
+  public static SharedPreferences getTempPreferences() {
+    return tempPreferences;
+  }
+
+  @Override
+  public void onCreate() {
+    // Clear temporary preferences
+    tempPreferences = getSharedPreferences(TEMP, Context.MODE_PRIVATE);
+    getTempPreferences().edit().clear().commit();
   }
 }
