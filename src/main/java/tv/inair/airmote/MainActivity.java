@@ -94,7 +94,11 @@ public class MainActivity extends Activity implements OnEventReceived, OnSocketS
         mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
           @Override
           public void onDismiss(DialogInterface dialog) {
-            mDialog = null;
+            if (input.getText().length() <= 0) {
+              mDialog.show();
+            } else {
+              mDialog = null;
+            }
           }
         });
 
