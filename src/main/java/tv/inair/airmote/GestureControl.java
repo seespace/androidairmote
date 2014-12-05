@@ -50,7 +50,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       long now = Helper.now();
       if (mPanning) {
         Log.d(DEBUG_TAG, "pan: CANCELED");
-        AiRMote.getSocketClient().sendEvent(
+        Airmote.getSocketClient().sendEvent(
             Helper.newPanEvent(
                 now,
                 event.getX(),
@@ -69,7 +69,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       }
       switch (event.getActionMasked()) {
         case MotionEvent.ACTION_MOVE:
-          AiRMote.getSocketClient().sendEvent(
+          Airmote.getSocketClient().sendEvent(
               Helper.newLongPressEvent(
                   now,
                   event.getX(),
@@ -83,7 +83,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
           Log.d(DEBUG_TAG, "holding: CHANGED");
           break;
         case MotionEvent.ACTION_UP:
-          AiRMote.getSocketClient().sendEvent(
+          Airmote.getSocketClient().sendEvent(
               Helper.newLongPressEvent(
                   now,
                   event.getX(),
@@ -101,7 +101,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       }
     } else if (mPanning && event.getActionMasked() == MotionEvent.ACTION_UP) {
       Log.d(DEBUG_TAG, "pan: ENDED");
-      AiRMote.getSocketClient().sendEvent(
+      Airmote.getSocketClient().sendEvent(
           Helper.newPanEvent(
               Helper.now(),
               event.getX(),
@@ -127,7 +127,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       Log.d(DEBUG_TAG, "pan: BEGAN");
       mPanning = true;
       mLastMotion = event;
-      AiRMote.getSocketClient().sendEvent(
+      Airmote.getSocketClient().sendEvent(
           Helper.newPanEvent(
               Helper.now(),
               event.getX(),
@@ -174,7 +174,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
 //    Log.d(DEBUG_TAG, "onFling: " + direction);
 
-    AiRMote.getSocketClient().sendEvent(
+    Airmote.getSocketClient().sendEvent(
         Helper.newSwipeEvent(
             Helper.now(),
             e2.getX(),
@@ -196,7 +196,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
     mHolding = true;
     mLastTime = Helper.now();
-    AiRMote.getSocketClient().sendEvent(
+    Airmote.getSocketClient().sendEvent(
         Helper.newLongPressEvent(
             mLastTime,
             event.getX(),
@@ -219,7 +219,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
     Log.d(DEBUG_TAG, "onPan: CHANGED");
     mLastMotion = e2;
 
-    AiRMote.getSocketClient().sendEvent(
+    Airmote.getSocketClient().sendEvent(
         Helper.newPanEvent(
             Helper.now(),
             e2.getX(),
@@ -250,7 +250,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onDoubleTap(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onDoubleTap: ");
-    AiRMote.getSocketClient().sendEvent(
+    Airmote.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),
@@ -272,7 +272,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onSingleTapConfirmed(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onSingleTapEvent: ");
-    AiRMote.getSocketClient().sendEvent(
+    Airmote.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),

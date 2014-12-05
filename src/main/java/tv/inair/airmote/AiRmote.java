@@ -13,7 +13,7 @@ import android.content.SharedPreferences;
  * <p/>
  * <p>Copyright (c) 2014 SeeSpace.co. All rights reserved.</p>
  */
-public class AiRMote extends Application {
+public class Airmote extends Application {
   public static final String TEMP = "#temp";
   private static SocketClient socketClient;
 

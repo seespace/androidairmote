@@ -43,10 +43,10 @@ public class SocketClient {
   public void reconnectToLastHost() {
     String lastHost = "";
 
-    System.out.println("SocketClient.reconnectToLastHost " + lastHost + " " + AiRMote.getTempPreferences().contains(HOST_NAME_KEY));
+    System.out.println("SocketClient.reconnectToLastHost " + lastHost + " " + Airmote.getTempPreferences().contains(HOST_NAME_KEY));
 
-    if (AiRMote.getTempPreferences().contains(HOST_NAME_KEY)) {
-      lastHost = AiRMote.getTempPreferences().getString(HOST_NAME_KEY, "");
+    if (Airmote.getTempPreferences().contains(HOST_NAME_KEY)) {
+      lastHost = Airmote.getTempPreferences().getString(HOST_NAME_KEY, "");
     }
     if (lastHost.isEmpty()) {
       return;
@@ -173,10 +173,10 @@ public class SocketClient {
       } else {
         if (data.connected) {
           // store current hostname
-          AiRMote.getTempPreferences().edit().putString(HOST_NAME_KEY, data.message).commit();
+          Airmote.getTempPreferences().edit().putString(HOST_NAME_KEY, data.message).commit();
           onStateChanged(true, null);
         } else {
-          AiRMote.getTempPreferences().edit().remove(HOST_NAME_KEY).commit();
+          Airmote.getTempPreferences().edit().remove(HOST_NAME_KEY).commit();
           notifyDisconnect(data.message);
         }
       }
