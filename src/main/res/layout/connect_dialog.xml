@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+  <CheckBox
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Using custom address"
+      android:id="@+id/customAddr"/>
+  <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:textAppearance="?android:attr/textAppearanceMedium"
+      android:id="@+id/textView" android:visibility="gone"/>
+  <EditText
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/customIp" android:maxLines="1" android:minLines="1"
+      android:hint="inair.local or 127.0.0.1" android:inputType="text"
+      android:visibility="gone"/>
+  <ListView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/listView"
+      android:layout_weight="1" android:footerDividersEnabled="false"
+      android:headerDividersEnabled="false" android:choiceMode="singleChoice"/>
+</LinearLayout>

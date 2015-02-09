@@ -13,26 +13,24 @@ import android.content.SharedPreferences;
  * <p/>
  * <p>Copyright (c) 2014 SeeSpace.co. All rights reserved.</p>
  */
-public class Airmote extends Application {
-  public static final String TEMP = "#temp";
-  private static SocketClient socketClient;
+public class AiRmote extends Application {
 
+  private static SocketClient mSocketClient;
   public static SocketClient getSocketClient() {
-    if (socketClient == null) {
-      socketClient = new SocketClient();
-    }
-    return socketClient;
+    return mSocketClient;
   }
 
-  private static SharedPreferences tempPreferences;
+  private static final String TEMP = "#temp";
+  private static SharedPreferences mTempPreferences;
   public static SharedPreferences getTempPreferences() {
-    return tempPreferences;
+    return mTempPreferences;
   }
 
   @Override
   public void onCreate() {
+    mSocketClient = new SocketClient();
     // Clear temporary preferences
-    tempPreferences = getSharedPreferences(TEMP, Context.MODE_PRIVATE);
+    mTempPreferences = getSharedPreferences(TEMP, Context.MODE_PRIVATE);
     getTempPreferences().edit().clear().commit();
   }
 }

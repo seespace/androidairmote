@@ -44,79 +44,91 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
   @Override
   public boolean onTouch(View v, MotionEvent event) {
+    Integer phase = null;
+    switch (event.getActionMasked()) {
+      case MotionEvent.ACTION_DOWN:
+        Log.d(DEBUG_TAG, "touch: BEGIN");
+        phase = Proto.BEGAN;
+        break;
+      case MotionEvent.ACTION_MOVE:
+        Log.d(DEBUG_TAG, "touch: MOVE");
+        phase = Proto.MOVED;
+        break;
+      case MotionEvent.ACTION_UP:
+        Log.d(DEBUG_TAG, "touch: END");
+        phase = Proto.ENDED;
+        break;
+      case MotionEvent.ACTION_CANCEL:
+        phase = Proto.CANCELLED;
+        break;
+    }
+    if (phase != null) {
+      AiRmote.getSocketClient().sendEvent(Helper.newTouchEvent(
+          Helper.now(),
+          event.getX(), event.getY(),
+          mElement.getWidth(), mElement.getHeight(),
+          phase
+      ));
+    }
+
     mDetector.onTouchEvent(event);
 
+    Proto.Event e = null;
+    long now = Helper.now();
     if (mHolding) {
-      long now = Helper.now();
       if (mPanning) {
         Log.d(DEBUG_TAG, "pan: CANCELED");
-        Airmote.getSocketClient().sendEvent(
-            Helper.newPanEvent(
-                now,
-                event.getX(),
-                event.getY(),
-                mElement.getWidth(),
-                mElement.getHeight(),
-                Proto.GestureEvent.State.CANCELLED,
-                0,
-                0,
-                0,
-                0
-            )
+        e = Helper.newPanEvent(
+            now,
+            event.getX(), event.getY(),
+            mElement.getWidth(), mElement.getHeight(),
+            Proto.GestureEvent.CANCELLED,
+            0, 0,
+            0, 0
         );
         mLastMotion = null;
         mPanning = false;
       }
+      Integer state = null;
+      long duration = 0;
       switch (event.getActionMasked()) {
         case MotionEvent.ACTION_MOVE:
-          Airmote.getSocketClient().sendEvent(
-              Helper.newLongPressEvent(
-                  now,
-                  event.getX(),
-                  event.getY(),
-                  mElement.getWidth(),
-                  mElement.getHeight(),
-                  Proto.GestureEvent.State.CHANGED,
-                  0
-              )
-          );
+          state = Proto.GestureEvent.CHANGED;
           Log.d(DEBUG_TAG, "holding: CHANGED");
           break;
         case MotionEvent.ACTION_UP:
-          Airmote.getSocketClient().sendEvent(
-              Helper.newLongPressEvent(
-                  now,
-                  event.getX(),
-                  event.getY(),
-                  mElement.getWidth(),
-                  mElement.getHeight(),
-                  Proto.GestureEvent.State.ENDED,
-                  now - mLastTime
-              )
-          );
+          state = Proto.GestureEvent.ENDED;
+          duration = now - mLastTime;
           mLastTime = 0;
           mHolding = false;
           Log.d(DEBUG_TAG, "holding: ENDED");
           break;
       }
+      if (state != null) {
+        e = Helper.newLongPressEvent(
+            now,
+            event.getX(), event.getY(),
+            mElement.getWidth(), mElement.getHeight(),
+            state,
+            duration
+        );
+      }
     } else if (mPanning && event.getActionMasked() == MotionEvent.ACTION_UP) {
       Log.d(DEBUG_TAG, "pan: ENDED");
-      Airmote.getSocketClient().sendEvent(
-          Helper.newPanEvent(
-              Helper.now(),
-              event.getX(),
-              event.getY(),
-              mElement.getWidth(),
-              mElement.getHeight(),
-              Proto.GestureEvent.State.ENDED,
-              event.getX() - mLastMotion.getX(),
-              event.getY() - mLastMotion.getY(),
-              0,
-              0
-          )
+      e = Helper.newPanEvent(
+          now,
+          event.getX(), event.getY(),
+          mElement.getWidth(), mElement.getHeight(),
+          Proto.GestureEvent.ENDED,
+          event.getX() - mLastMotion.getX(), event.getY() - mLastMotion.getY(),
+          0, 0
       );
       mLastMotion = null;
       mPanning = false;
+    }
+
+    if (e != null) {
+      AiRmote.getSocketClient().sendEvent(e);
     }
     return true;
   }
@@ -127,14 +139,14 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       Log.d(DEBUG_TAG, "pan: BEGAN");
       mPanning = true;
       mLastMotion = event;
-      Airmote.getSocketClient().sendEvent(
+      AiRmote.getSocketClient().sendEvent(
           Helper.newPanEvent(
               Helper.now(),
               event.getX(),
               event.getY(),
               mElement.getWidth(),
               mElement.getHeight(),
-              Proto.GestureEvent.State.BEGAN,
+              Proto.GestureEvent.BEGAN,
               0,
               0,
               0,
@@ -158,30 +170,30 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       return true;
     }
 
-    Proto.GestureEvent.SwipeDirection direction;
+    int direction;
     float dY = e2.getY() - e1.getY();
     float dX = e2.getX() - e1.getX();
 
     if (Math.abs(dX) > Math.abs(dY)) {
       direction = dX > 0
-                  ? Proto.GestureEvent.SwipeDirection.RIGHT
-                  : Proto.GestureEvent.SwipeDirection.LEFT;
+                  ? Proto.GestureEvent.RIGHT
+                  : Proto.GestureEvent.LEFT;
     } else {
       direction = dY > 0
-                  ? Proto.GestureEvent.SwipeDirection.DOWN
-                  : Proto.GestureEvent.SwipeDirection.UP;
+                  ? Proto.GestureEvent.DOWN
+                  : Proto.GestureEvent.UP;
     }
 
 //    Log.d(DEBUG_TAG, "onFling: " + direction);
 
-    Airmote.getSocketClient().sendEvent(
+    AiRmote.getSocketClient().sendEvent(
         Helper.newSwipeEvent(
             Helper.now(),
             e2.getX(),
             e2.getY(),
             mElement.getWidth(),
             mElement.getHeight(),
-            Proto.GestureEvent.State.ENDED,
+            Proto.GestureEvent.ENDED,
             direction
         )
     );
@@ -196,14 +208,14 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
     mHolding = true;
     mLastTime = Helper.now();
-    Airmote.getSocketClient().sendEvent(
+    AiRmote.getSocketClient().sendEvent(
         Helper.newLongPressEvent(
             mLastTime,
             event.getX(),
             event.getY(),
             mElement.getWidth(),
             mElement.getHeight(),
-            Proto.GestureEvent.State.BEGAN,
+            Proto.GestureEvent.BEGAN,
             0
         )
     );
@@ -219,14 +231,14 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
     Log.d(DEBUG_TAG, "onPan: CHANGED");
     mLastMotion = e2;
 
-    Airmote.getSocketClient().sendEvent(
+    AiRmote.getSocketClient().sendEvent(
         Helper.newPanEvent(
             Helper.now(),
             e2.getX(),
             e2.getY(),
             mElement.getWidth(),
             mElement.getHeight(),
-            Proto.GestureEvent.State.CHANGED,
+            Proto.GestureEvent.CHANGED,
             distanceX,
             distanceY,
             0,
@@ -250,14 +262,14 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onDoubleTap(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onDoubleTap: ");
-    Airmote.getSocketClient().sendEvent(
+    AiRmote.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),
             event.getY(),
             mElement.getWidth(),
             mElement.getHeight(),
-            Proto.GestureEvent.State.ENDED,
+            Proto.GestureEvent.ENDED,
             2
         )
     );
@@ -272,14 +284,14 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onSingleTapConfirmed(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onSingleTapEvent: ");
-    Airmote.getSocketClient().sendEvent(
+    AiRmote.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),
             event.getY(),
             mElement.getWidth(),
             mElement.getHeight(),
-            Proto.GestureEvent.State.ENDED,
+            Proto.GestureEvent.ENDED,
             1
         )
     );
