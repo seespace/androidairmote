@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
   compileSdkVersion 21
-  buildToolsVersion '20'
+  buildToolsVersion "21.1.2"
 
   defaultConfig {
     applicationId "tv.inair.airmote"
@@ -19,5 +19,5 @@ android {
 
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
-  compile 'com.android.support:support-v4:21.0.2'
+  compile "com.android.support:support-v4:21.0.2"
 }

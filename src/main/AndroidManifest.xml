@@ -4,6 +4,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.BLUETOOTH"/>
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
 
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -29,7 +30,7 @@
     </activity>
 
     <activity
-        android:name=".bluetooth.DeviceListActivity"
+        android:name=".DeviceListActivity"
         android:configChanges="orientation|keyboardHidden"
         android:theme="@android:style/Theme.Holo.Dialog"/>
   </application>

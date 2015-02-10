@@ -3,6 +3,8 @@ package tv.inair.airmote;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import tv.inair.airmote.connection.SocketClient;
+
 /**
  * <p>
  * Note this class is currently under early design and development.

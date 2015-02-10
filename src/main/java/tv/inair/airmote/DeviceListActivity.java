@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tv.inair.airmote.bluetooth;
+package tv.inair.airmote;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;

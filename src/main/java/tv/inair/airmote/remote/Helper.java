@@ -1,4 +1,4 @@
-package inair.eventcenter.proto;
+package tv.inair.airmote.remote;
 
 import android.content.Context;
 import android.content.pm.PackageManager;

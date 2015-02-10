@@ -1,4 +1,4 @@
-package tv.inair.airmote;
+package tv.inair.airmote.remote;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,8 +9,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
-import inair.eventcenter.proto.Helper;
-import inair.eventcenter.proto.Proto;
+import tv.inair.airmote.Application;
 
 /**
  * <p>
@@ -21,7 +20,7 @@ import inair.eventcenter.proto.Proto;
  * <p/>
  * <p>Copyright (c) 2014 SeeSpace.co. All rights reserved.</p>
  */
-class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
+public class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTapListener, GestureDetector.OnGestureListener {
   private static final String DEBUG_TAG = "Gestures";
 
   private static final int SWIPE_VELOCITY_THRESHOLD = 100;

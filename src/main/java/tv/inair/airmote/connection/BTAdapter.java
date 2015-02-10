@@ -1,9 +1,10 @@
-package tv.inair.airmote.bluetooth;
+package tv.inair.airmote.connection;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.util.UUID;
  * <p/>
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
-public class Listener {
+public class BTAdapter {
   private static final String TAG = "Listener";
 
   private static final String NAME_SECURE = "inAiRSecure";
@@ -35,16 +36,22 @@ public class Listener {
   private ConnectedThread mConnectedThread;
   private int mState;
 
+  private Handler mHandler;
+
   // Constants that indicate the current connection state
   public static final int STATE_NONE = 0;       // we're doing nothing
   public static final int STATE_LISTEN = 1;     // now listening for incoming connections
   public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
   public static final int STATE_CONNECTED = 3;  // now connected to a remote device
 
-  public Listener() {
+  public BTAdapter(Handler handler) {
     this.mAdapter = BluetoothAdapter.getDefaultAdapter();
-    this.mAdapter.enable();
+    this.mHandler = handler;
     this.mState = STATE_NONE;
+  }
+
+  public void connect(String address) {
+    connect(mAdapter.getRemoteDevice(address));
   }
 
   public synchronized void connect(BluetoothDevice device) {
@@ -105,32 +112,6 @@ public class Listener {
     setState(STATE_CONNECTED);
   }
 
-  /**
-   * Start the chat service. Specifically start AcceptThread to begin a
-   * session in listening (server) mode. Called by the Activity onResume()
-   */
-  public synchronized void start() {
-    // Cancel any thread attempting to make a connection
-    if (mConnectThread != null) {
-      mConnectThread.cancel();
-      mConnectThread = null;
-    }
-
-    // Cancel any thread currently running a connection
-    if (mConnectedThread != null) {
-      mConnectedThread.cancel();
-      mConnectedThread = null;
-    }
-
-    setState(STATE_LISTEN);
-
-    // Start the thread to listen on a BluetoothServerSocket
-    if (mSecureAcceptThread == null) {
-      mSecureAcceptThread = new AcceptThread();
-      mSecureAcceptThread.start();
-    }
-  }
-
   public synchronized void stop() {
     Log.d(TAG, "stop");
 
@@ -164,6 +145,10 @@ public class Listener {
     r.write(out);
   }
 
+  public boolean isConnected() {
+    return mState == STATE_CONNECTED;
+  }
+
   /**
    * Indicate that the connection attempt failed and notify the UI Activity.
    */
@@ -174,9 +159,6 @@ public class Listener {
 //    bundle.putString(Constants.TOAST, "Unable to connect device");
 //    msg.setData(bundle);
 //    mHandler.sendMessage(msg);
-
-    // Start the service over to restart listening mode
-    start();
   }
 
   private void connectionLost() {
@@ -186,9 +168,6 @@ public class Listener {
 //    bundle.putString(Constants.TOAST, "Device connection was lost");
 //    msg.setData(bundle);
 //    mHandler.sendMessage(msg);
-
-    // Start the service over to restart listening mode
-    start();
   }
 
   private synchronized void setState(int state) {
@@ -237,7 +216,7 @@ public class Listener {
 
         // If a connection was accepted
         if (socket != null) {
-          synchronized (Listener.this) {
+          synchronized (BTAdapter.this) {
             switch (mState) {
               case STATE_LISTEN:
               case STATE_CONNECTING:
@@ -321,7 +300,7 @@ public class Listener {
       }
 
       // Reset the ConnectThread because we're done
-      synchronized (Listener.this) {
+      synchronized (BTAdapter.this) {
         mConnectThread = null;
       }
 
@@ -373,11 +352,16 @@ public class Listener {
       // Keep listening to the InputStream while connected
       while (true) {
         try {
-          // Read from the InputStream
-          bytes = mmInStream.read(buffer);
+          if (mmInStream.available() > 0) {
+            System.out.println("Avail: " + mmInStream.available());
+            // Read from the InputStream
+            bytes = mmInStream.read(buffer);
 
-          // Send the obtained bytes to the UI Activity
-//          mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+            System.out.println("RECEIVE: " + bytes);
+
+            // Send the obtained bytes to the UI Activity
+            mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+          }
         } catch (IOException e) {
           Log.e(TAG, "disconnected", e);
           connectionLost();
@@ -396,7 +380,7 @@ public class Listener {
         mmOutStream.write(buffer);
 
         // Share the sent message back to the UI Activity
-//        mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
+        mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
       } catch (IOException e) {
         Log.e(TAG, "Exception during write", e);
       }
