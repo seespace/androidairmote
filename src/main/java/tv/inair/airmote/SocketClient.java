@@ -48,11 +48,11 @@ public class SocketClient {
   }
 
   public void reconnectToLastHost() {
-    if (!AiRmote.getTempPreferences().contains(HOST_NAME_KEY)) {
+    if (!Application.getTempPreferences().contains(HOST_NAME_KEY)) {
       return;
     }
-    String lastHost = AiRmote.getTempPreferences().getString(HOST_NAME_KEY, "");
-    String displayName = AiRmote.getTempPreferences().getString(DISPLAY_NAME_KEY, "");
+    String lastHost = Application.getTempPreferences().getString(HOST_NAME_KEY, "");
+    String displayName = Application.getTempPreferences().getString(DISPLAY_NAME_KEY, "");
     connectTo(lastHost, displayName);
   }
 
@@ -176,14 +176,14 @@ public class SocketClient {
       } else {
         if (data.connected) {
           // store current hostname
-          AiRmote.getTempPreferences()
+          Application.getTempPreferences()
               .edit()
               .putString(HOST_NAME_KEY, mHostName)
               .putString(DISPLAY_NAME_KEY, mDisplayName)
               .commit();
           onStateChanged(true, mDisplayName);
         } else {
-          AiRmote.getTempPreferences()
+          Application.getTempPreferences()
               .edit()
               .remove(HOST_NAME_KEY)
               .remove(DISPLAY_NAME_KEY)

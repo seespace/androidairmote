@@ -49,7 +49,7 @@ public class NsdHelper {
       @Override
       public void onServiceFound(NsdServiceInfo service) {
         Log.d(TAG, "Service discovery success " + service);
-        if (!service.getServiceType().equals(EventCenter.SERVICE_TYPE)) {
+        if (!service.getServiceType().equals("")) {
           Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
         } else if (service.getServiceName().equals(mServiceName)) {
           Log.d(TAG, "Same machine: " + mServiceName);
@@ -131,23 +131,23 @@ public class NsdHelper {
 
   public void registerService() {
     NsdServiceInfo serviceInfo = new NsdServiceInfo();
-    serviceInfo.setPort(EventCenter.SERVER_PORT);
+    serviceInfo.setPort(8989);
     serviceInfo.setServiceName(mServiceName);
-    serviceInfo.setServiceType(EventCenter.SERVICE_TYPE);
+    serviceInfo.setServiceType("_irpc._tcp.");
     mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
   }
 
   public void discoverServices() {
-    mMap.clear();
-    mAdapter.clear();
-    mNsdManager.discoverServices(EventCenter.SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
+//    mMap.clear();
+//    mAdapter.clear();
+//    mNsdManager.discoverServices("_irpc._tcp.", NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
   }
 
   public void stopDiscovery() {
-    mNsdManager.stopServiceDiscovery(mDiscoveryListener);
+//    mNsdManager.stopServiceDiscovery(mDiscoveryListener);
   }
 
   public void tearDown() {
-    mNsdManager.unregisterService(mRegistrationListener);
+//    mNsdManager.unregisterService(mRegistrationListener);
   }
 }

@@ -1,7 +1,9 @@
 package tv.inair.airmote;
 
+import android.app.Activity;
 import android.content.Context;
 import android.support.v4.view.GestureDetectorCompat;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -32,7 +34,11 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   private MotionEvent mLastMotion;
   private long mLastTime;
 
+  final DisplayMetrics metrics = new DisplayMetrics();
+
   public GestureControl(Context context, View element) {
+    ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
     mDetector = new GestureDetectorCompat(context, this);
     // Set the gesture detector as the double tap
     // listener.
@@ -63,7 +69,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
         break;
     }
     if (phase != null) {
-      AiRmote.getSocketClient().sendEvent(Helper.newTouchEvent(
+      Application.getSocketClient().sendEvent(Helper.newTouchEvent(
           Helper.now(),
           event.getX(), event.getY(),
           mElement.getWidth(), mElement.getHeight(),
@@ -128,7 +134,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
     }
 
     if (e != null) {
-      AiRmote.getSocketClient().sendEvent(e);
+      Application.getSocketClient().sendEvent(e);
     }
     return true;
   }
@@ -139,7 +145,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       Log.d(DEBUG_TAG, "pan: BEGAN");
       mPanning = true;
       mLastMotion = event;
-      AiRmote.getSocketClient().sendEvent(
+      Application.getSocketClient().sendEvent(
           Helper.newPanEvent(
               Helper.now(),
               event.getX(),
@@ -163,8 +169,8 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
       return false;
     }
 
-    float absVeloX = Math.abs(velocityX);
-    float absVeloY = Math.abs(velocityY);
+    float absVeloX = Math.abs(velocityX / metrics.xdpi * 25.4f);
+    float absVeloY = Math.abs(velocityY / metrics.ydpi * 25.4f);
 
     if (absVeloX < SWIPE_VELOCITY_THRESHOLD && absVeloY < SWIPE_VELOCITY_THRESHOLD) {
       return true;
@@ -184,9 +190,9 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
                   : Proto.GestureEvent.UP;
     }
 
-//    Log.d(DEBUG_TAG, "onFling: " + direction);
+    Log.d(DEBUG_TAG, "onFling: " + direction);
 
-    AiRmote.getSocketClient().sendEvent(
+    Application.getSocketClient().sendEvent(
         Helper.newSwipeEvent(
             Helper.now(),
             e2.getX(),
@@ -208,7 +214,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
 
     mHolding = true;
     mLastTime = Helper.now();
-    AiRmote.getSocketClient().sendEvent(
+    Application.getSocketClient().sendEvent(
         Helper.newLongPressEvent(
             mLastTime,
             event.getX(),
@@ -231,7 +237,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
     Log.d(DEBUG_TAG, "onPan: CHANGED");
     mLastMotion = e2;
 
-    AiRmote.getSocketClient().sendEvent(
+    Application.getSocketClient().sendEvent(
         Helper.newPanEvent(
             Helper.now(),
             e2.getX(),
@@ -262,7 +268,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onDoubleTap(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onDoubleTap: ");
-    AiRmote.getSocketClient().sendEvent(
+    Application.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),
@@ -284,7 +290,7 @@ class GestureControl implements View.OnTouchListener, GestureDetector.OnDoubleTa
   @Override
   public boolean onSingleTapConfirmed(MotionEvent event) {
 //    Log.d(DEBUG_TAG, "onSingleTapEvent: ");
-    AiRmote.getSocketClient().sendEvent(
+    Application.getSocketClient().sendEvent(
         Helper.newTapEvent(
             Helper.now(),
             event.getX(),

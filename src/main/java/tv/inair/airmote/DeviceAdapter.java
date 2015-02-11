@@ -51,7 +51,7 @@ public class DeviceAdapter extends ArrayAdapter<NsdHelper.Item> {
       // configure view holder
       ViewHolder viewHolder = new ViewHolder();
       viewHolder.nameView = (TextView) rowView.findViewById(R.id.displayName);
-      viewHolder.addrView = (TextView) rowView.findViewById(R.id.hostName);
+//      viewHolder.addrView = (TextView) rowView.findViewById(R.id.hostName);
       rowView.setTag(viewHolder);
     }
 

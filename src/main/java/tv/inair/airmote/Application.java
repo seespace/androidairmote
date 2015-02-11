@@ -1,6 +1,5 @@
 package tv.inair.airmote;
 
-import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -13,7 +12,7 @@ import android.content.SharedPreferences;
  * <p/>
  * <p>Copyright (c) 2014 SeeSpace.co. All rights reserved.</p>
  */
-public class AiRmote extends Application {
+public class Application extends android.app.Application {
 
   private static SocketClient mSocketClient;
   public static SocketClient getSocketClient() {
