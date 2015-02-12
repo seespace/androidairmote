@@ -27,11 +27,19 @@ public class Application extends android.app.Application {
     return mTempPreferences;
   }
 
+  private static final String SETTINGS = "#settings";
+  private static SharedPreferences mSettingsPreferences;
+  public static SharedPreferences getSettingsPreferences() {
+    return mSettingsPreferences;
+  }
+
   @Override
   public void onCreate() {
     mSocketClient = new SocketClient();
     // Clear temporary preferences
     mTempPreferences = getSharedPreferences(TEMP, Context.MODE_PRIVATE);
     getTempPreferences().edit().clear().commit();
+
+    mSettingsPreferences = getSharedPreferences(SETTINGS, Context.MODE_PRIVATE);
   }
 }

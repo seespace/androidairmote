@@ -74,13 +74,15 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     if (!adapter.isEnabled()) {
       Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
       startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-      // Otherwise, setup the chat session
+    } else if (!Application.getSocketClient().isConnected()) {
+      discoverInAiR();
     }
   }
 
   @Override
   public void onResume() {
     super.onResume();
+//    Application.getSocketClient().reconnectToLastHost();
     //    if (!Application.getSocketClient().isConnected()) {
     //      Application.getSocketClient().reconnectToLastHost();
     //    }
@@ -88,19 +90,28 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     // Performing this check in onResume() covers the case in which BT was
     // not enabled during onStart(), so we were paused to enable it...
     // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
-//    if (mChatService != null) {
-      // Only if the state is STATE_NONE, do we know that we haven't started already
-      //      if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
-      //        // Start the Bluetooth chat services
-      //        mChatService.start();
-      //      }
-//    }
+    //    if (mChatService != null) {
+    // Only if the state is STATE_NONE, do we know that we haven't started already
+    //      if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
+    //        // Start the Bluetooth chat services
+    //        mChatService.start();
+    //      }
+    //    }
   }
 
   @Override
   public void onPause() {
-    Application.getSocketClient().disconnect();
+    //    Application.getSocketClient().disconnect();
     super.onPause();
+  }
+
+  @Override
+  public void onStop() {
+//    Application.getSocketClient().disconnect();
+    //    if (adapter.isEnabled()) {
+    //      adapter.disable();
+    //    }
+    super.onStop();
   }
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -116,7 +127,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
       case REQUEST_ENABLE_BT:
         // When the request to enable Bluetooth returns
-        if (resultCode == Activity.RESULT_OK) {
+        if (resultCode == Activity.RESULT_OK && !Application.getSocketClient().isConnected()) {
           // Bluetooth is now enabled, so set up a chat session
           discoverInAiR();
         } else {
@@ -126,10 +137,6 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
           Toast.makeText(getActivity(), "Bluetooth not enabled", Toast.LENGTH_SHORT).show();
         }
     }
-  }
-
-  @Override
-  public void onEventReceived(Proto.Event event) {
   }
 
   boolean isDiscovering = false;
@@ -144,12 +151,27 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   @Override
+  public void onEventReceived(Proto.Event event) {
+    switch (event.type) {
+      case Proto.Event.OAUTH_REQUEST:
+        Proto.OAuthRequestEvent oAuthEvent = event.getExtension(Proto.OAuthRequestEvent.event);
+        Intent i = new Intent(getActivity(), WebviewActivity.class);
+        i.putExtra(WebviewActivity.EXTRA_URL, oAuthEvent.authUrl);
+        i.putExtra(WebviewActivity.EXTRA_REPLY_TO, event.replyTo);
+        startActivity(i);
+        break;
+      case Proto.Event.TEXT_INPUT_REQUEST:
+//        processTextInput();
+        break;
+    }
+  }
+
+  @Override
   public void onStateChanged(boolean connect, String message) {
     if (!connect) {
       if (!adapter.isEnabled()) {
         Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        // Otherwise, setup the chat session
       } else {
         discoverInAiR();
       }

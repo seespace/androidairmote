@@ -1,38 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    package="tv.inair.airmote"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest package="tv.inair.airmote"
+          xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.BLUETOOTH"/>
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-
   <uses-permission android:name="android.permission.INTERNET"/>
-  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-  <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 
+  <!-- <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/> -->
+  <!-- <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/> -->
   <application
       android:name=".Application"
       android:allowBackup="true"
       android:icon="@drawable/ic_launcher"
       android:label="@string/app_name"
-      android:theme="@style/AppStyle"
-      >
+      android:theme="@style/AppStyle">
     <activity
-        android:name="MainActivity"
+        android:name=".MainActivity"
         android:label="@string/app_name"
-        android:screenOrientation="portrait"
-        >
+        android:screenOrientation="portrait">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
-
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
     </activity>
 
     <activity
         android:name=".DeviceListActivity"
-        android:configChanges="orientation|keyboardHidden"
-        android:theme="@android:style/Theme.Holo.Dialog"/>
+        android:parentActivityName=".MainActivity"
+        android:theme="@android:style/Theme.Holo.Dialog"
+        >
+      <meta-data
+          android:name="android.support.PARENT_ACTIVITY"
+          android:value=".MainActivity"/>
+    </activity>
+
+    <activity
+        android:name=".WebviewActivity"
+        android:label="@string/title_activity_webview"
+        android:parentActivityName=".MainActivity"
+        >
+      <meta-data
+          android:name="android.support.PARENT_ACTIVITY"
+          android:value=".MainActivity"/>
+    </activity>
   </application>
 
 </manifest>

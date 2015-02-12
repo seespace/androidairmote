@@ -23,6 +23,7 @@ public class SocketClient {
         case Constants.MESSAGE_STATE_CHANGE:
           switch (msg.arg1) {
             case BTAdapter.STATE_CONNECTED:
+              System.out.println("SocketClient.handleMessage SAVED");
               Application.getTempPreferences()
                   .edit()
                   .putString(HOST_NAME_KEY, mHostName)
@@ -37,7 +38,8 @@ public class SocketClient {
           break;
         case Constants.MESSAGE_READ:
           byte[] data = (byte[]) msg.obj;
-          System.out.println("SocketClient.handleMessage " + data.length);
+          int length = msg.arg1;
+          System.out.println("SocketClient.handleMessage " + length);
           onEventReceived(Helper.parseFrom(data));
           break;
         case Constants.MESSAGE_DEVICE_NAME:
@@ -58,7 +60,11 @@ public class SocketClient {
   private String mDisplayName;
   private String mHostName;
 
-  private BTAdapter mBtAdapter = new BTAdapter(mHandler);
+  private BTAdapter mBtAdapter = BTAdapter.getInstance();
+
+  public SocketClient() {
+    mBtAdapter.setHandler(mHandler);
+  }
 
   public void setOnEventReceived(OnEventReceived listener) {
     mEventReceived = new WeakReference<>(listener);
@@ -107,7 +113,6 @@ public class SocketClient {
       return;
     }
     byte[] data = Helper.dataFromEvent(e);
-    System.out.println("SocketClient.sendEvent " + data.length);
     mBtAdapter.write(data);
   }
 

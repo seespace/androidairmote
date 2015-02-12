@@ -6,11 +6,15 @@ import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.util.Log;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -26,12 +30,15 @@ public class BTAdapter {
   private static final String TAG = "Listener";
 
   private static final String NAME_SECURE = "inAiRSecure";
+  private static final String NAME_INSECURE = "inAiRInsecure";
 
   // Unique UUID for this application
-  private static final UUID MY_UUID_SECURE = UUID.fromString("B1B82063-8AE8-4C4C-8D43-ED895D423C13");
+  private static final String INSECURE = "B1B82063-8AE8-4C4C-8D43-ED895D423C13";
+  private static final UUID MY_UUID_INSECURE = UUID.fromString(INSECURE);
+  private static final UUID MY_UUID_SECURE = UUID.fromString("B978CFA5-C1EB-43F0-83EC-8B7417988D72");
 
   // Member fields
-  private final BluetoothAdapter mAdapter;
+  public final BluetoothAdapter adapter;
   private ConnectThread mConnectThread;
   private ConnectedThread mConnectedThread;
   private int mState;
@@ -43,14 +50,39 @@ public class BTAdapter {
   public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
   public static final int STATE_CONNECTED = 3;  // now connected to a remote device
 
-  public BTAdapter(Handler handler) {
-    this.mAdapter = BluetoothAdapter.getDefaultAdapter();
-    this.mHandler = handler;
+  public boolean checkIfInAiR(Parcelable[] uuids) {
+    if (uuids == null || uuids.length == 0) {
+      return false;
+    }
+
+    for (Parcelable uuid : uuids) {
+      if (INSECURE.equalsIgnoreCase(uuid.toString())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static BTAdapter instance;
+
+  public static BTAdapter getInstance() {
+    if (instance == null) {
+      instance = new BTAdapter();
+    }
+    return instance;
+  }
+
+  private BTAdapter() {
+    this.adapter = BluetoothAdapter.getDefaultAdapter();
     this.mState = STATE_NONE;
   }
 
+  public void setHandler(Handler handler) {
+    this.mHandler = handler;
+  }
+
   public void connect(String address) {
-    connect(mAdapter.getRemoteDevice(address));
+    connect(adapter.getRemoteDevice(address));
   }
 
   public synchronized void connect(BluetoothDevice device) {
@@ -180,7 +212,8 @@ public class BTAdapter {
       // Get a BluetoothSocket for a connection with the
       // given BluetoothDevice
       try {
-        tmp = device.createRfcommSocketToServiceRecord(MY_UUID_SECURE);
+        tmp = device.createInsecureRfcommSocketToServiceRecord(MY_UUID_INSECURE);
+//        tmp = device.createRfcommSocketToServiceRecord(MY_UUID_SECURE);
       } catch (IOException e) {
         Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
       }
@@ -192,7 +225,7 @@ public class BTAdapter {
       setName("ConnectThread" + mSocketType);
 
       // Always cancel discovery because it will slow down a connection
-      mAdapter.cancelDiscovery();
+      adapter.cancelDiscovery();
 
       // Make a connection to the BluetoothSocket
       try {
@@ -235,8 +268,10 @@ public class BTAdapter {
    */
   private class ConnectedThread extends Thread {
     private final BluetoothSocket mmSocket;
-    private final InputStream mmInStream;
-    private final OutputStream mmOutStream;
+//    private final InputStream mmInStream;
+//    private final OutputStream mmOutStream;
+    private final DataInputStream mDataIS;
+    private final DataOutputStream mDataOS;
 
     public ConnectedThread(BluetoothSocket socket, String socketType) {
       Log.d(TAG, "create ConnectedThread: " + socketType);
@@ -252,27 +287,27 @@ public class BTAdapter {
         Log.e(TAG, "temp sockets not created", e);
       }
 
-      mmInStream = tmpIn;
-      mmOutStream = tmpOut;
+      mDataIS = new DataInputStream(tmpIn);
+      mDataOS = new DataOutputStream(tmpOut);
     }
 
     public void run() {
       Log.i(TAG, "BEGIN mConnectedThread");
       byte[] buffer = new byte[1024];
       int bytes;
+      int length;
 
       // Keep listening to the InputStream while connected
       while (true) {
         try {
-          if (mmInStream.available() > 0) {
-            System.out.println("Avail: " + mmInStream.available());
-            // Read from the InputStream
-            bytes = mmInStream.read(buffer);
-
-            System.out.println("RECEIVE: " + bytes);
+          if (mDataIS.available() > 0) {
+            System.out.println("Avail: " + mDataIS.available());
+            length = mDataIS.readInt();
+            bytes = mDataIS.read(buffer);
+            System.out.println("RECEIVE: " + bytes + " " + length);
 
             // Send the obtained bytes to the UI Activity
-            mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, buffer).sendToTarget();
+            mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, Arrays.copyOf(buffer, length)).sendToTarget();
           }
         } catch (IOException e) {
           Log.e(TAG, "disconnected", e);
@@ -289,10 +324,9 @@ public class BTAdapter {
      */
     public void write(byte[] buffer) {
       try {
-        mmOutStream.write(buffer);
-
-        // Share the sent message back to the UI Activity
-        mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
+        mDataOS.write(buffer);
+//        // Share the sent message back to the UI Activity
+//        mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
       } catch (IOException e) {
         Log.e(TAG, "Exception during write", e);
       }

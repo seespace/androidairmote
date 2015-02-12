@@ -52,15 +52,15 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
     Integer phase = null;
     switch (event.getActionMasked()) {
       case MotionEvent.ACTION_DOWN:
-        Log.d(DEBUG_TAG, "touch: BEGIN");
+//        Log.d(DEBUG_TAG, "touch: BEGIN");
         phase = Proto.BEGAN;
         break;
       case MotionEvent.ACTION_MOVE:
-        Log.d(DEBUG_TAG, "touch: MOVE");
+//        Log.d(DEBUG_TAG, "touch: MOVE");
         phase = Proto.MOVED;
         break;
       case MotionEvent.ACTION_UP:
-        Log.d(DEBUG_TAG, "touch: END");
+//        Log.d(DEBUG_TAG, "touch: END");
         phase = Proto.ENDED;
         break;
       case MotionEvent.ACTION_CANCEL:
@@ -82,7 +82,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
     long now = Helper.now();
     if (mHolding) {
       if (mPanning) {
-        Log.d(DEBUG_TAG, "pan: CANCELED");
+//        Log.d(DEBUG_TAG, "pan: CANCELED");
         e = Helper.newPanEvent(
             now,
             event.getX(), event.getY(),
@@ -99,14 +99,14 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
       switch (event.getActionMasked()) {
         case MotionEvent.ACTION_MOVE:
           state = Proto.GestureEvent.CHANGED;
-          Log.d(DEBUG_TAG, "holding: CHANGED");
+//          Log.d(DEBUG_TAG, "holding: CHANGED");
           break;
         case MotionEvent.ACTION_UP:
           state = Proto.GestureEvent.ENDED;
           duration = now - mLastTime;
           mLastTime = 0;
           mHolding = false;
-          Log.d(DEBUG_TAG, "holding: ENDED");
+//          Log.d(DEBUG_TAG, "holding: ENDED");
           break;
       }
       if (state != null) {
@@ -119,7 +119,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
         );
       }
     } else if (mPanning && event.getActionMasked() == MotionEvent.ACTION_UP) {
-      Log.d(DEBUG_TAG, "pan: ENDED");
+//      Log.d(DEBUG_TAG, "pan: ENDED");
       e = Helper.newPanEvent(
           now,
           event.getX(), event.getY(),
@@ -141,7 +141,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
   @Override
   public boolean onDown(MotionEvent event) {
     if (!mHolding && !mPanning) {
-      Log.d(DEBUG_TAG, "pan: BEGAN");
+//      Log.d(DEBUG_TAG, "pan: BEGAN");
       mPanning = true;
       mLastMotion = event;
       Application.getSocketClient().sendEvent(
@@ -171,6 +171,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
     float absVeloX = Math.abs(velocityX / metrics.xdpi * 25.4f);
     float absVeloY = Math.abs(velocityY / metrics.ydpi * 25.4f);
 
+    System.out.println("GestureControl.onFling " + absVeloX + " " + absVeloY);
     if (absVeloX < SWIPE_VELOCITY_THRESHOLD && absVeloY < SWIPE_VELOCITY_THRESHOLD) {
       return true;
     }
@@ -224,7 +225,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
             0
         )
     );
-    Log.d(DEBUG_TAG, "holding: BEGAN ");
+//    Log.d(DEBUG_TAG, "holding: BEGAN ");
   }
 
   @Override
@@ -233,7 +234,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
       return false;
     }
 
-    Log.d(DEBUG_TAG, "onPan: CHANGED");
+//    Log.d(DEBUG_TAG, "onPan: CHANGED");
     mLastMotion = e2;
 
     Application.getSocketClient().sendEvent(
