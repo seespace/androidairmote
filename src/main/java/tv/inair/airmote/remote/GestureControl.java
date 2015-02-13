@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -56,7 +55,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
         phase = Proto.BEGAN;
         break;
       case MotionEvent.ACTION_MOVE:
-//        Log.d(DEBUG_TAG, "touch: MOVE");
+//        Log.d(DEBUG_TAG, "touch: MOVE " + event.getX() + " " + mElement.getWidth() + " " + event.getY() + " " + mElement.getHeight());
         phase = Proto.MOVED;
         break;
       case MotionEvent.ACTION_UP:
@@ -171,7 +170,6 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
     float absVeloX = Math.abs(velocityX / metrics.xdpi * 25.4f);
     float absVeloY = Math.abs(velocityY / metrics.ydpi * 25.4f);
 
-    System.out.println("GestureControl.onFling " + absVeloX + " " + absVeloY);
     if (absVeloX < SWIPE_VELOCITY_THRESHOLD && absVeloY < SWIPE_VELOCITY_THRESHOLD) {
       return true;
     }
@@ -190,7 +188,7 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
                   : Proto.GestureEvent.UP;
     }
 
-    Log.d(DEBUG_TAG, "onFling: " + direction);
+//    Log.d(DEBUG_TAG, "onFling: " + direction);
 
     Application.getSocketClient().sendEvent(
         Helper.newSwipeEvent(
@@ -237,18 +235,18 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
 //    Log.d(DEBUG_TAG, "onPan: CHANGED");
     mLastMotion = e2;
 
+    float velocityX, velocityY;
+    velocityX = 1000 * (e2.getX() - e1.getX()) / (e2.getEventTime() - e1.getEventTime());
+    velocityY = 1000 * (e2.getY() - e1.getY()) / (e2.getEventTime() - e1.getEventTime());
+
     Application.getSocketClient().sendEvent(
         Helper.newPanEvent(
             Helper.now(),
-            e2.getX(),
-            e2.getY(),
-            mElement.getWidth(),
-            mElement.getHeight(),
+            e2.getX(), e2.getY(),
+            mElement.getWidth(), mElement.getHeight(),
             Proto.GestureEvent.CHANGED,
-            distanceX,
-            distanceY,
-            0,
-            0
+            e2.getX() - e1.getX(), e2.getY() - e1.getY(),
+            velocityX, velocityY
         )
     );
 

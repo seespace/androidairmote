@@ -10,14 +10,7 @@ import android.webkit.WebViewClient;
 import java.util.Set;
 
 import tv.inair.airmote.remote.Helper;
-import tv.inair.airmote.util.SystemUiHider;
 
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- *
- * @see SystemUiHider
- */
 public class WebviewActivity extends Activity {
 
   public static final String EXTRA_URL = "extra_url";
