@@ -5,6 +5,9 @@ import android.os.Message;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import tv.inair.airmote.Application;
 import tv.inair.airmote.remote.Helper;
@@ -29,6 +32,13 @@ public class SocketClient {
                   .putString(HOST_NAME_KEY, mHostName)
                   .putString(DISPLAY_NAME_KEY, mDisplayName)
                   .commit();
+
+              Application.getSettingsPreferences()
+                  .edit()
+                  .putString(HOST_NAME_KEY, mHostName)
+                  .putString(DISPLAY_NAME_KEY, mDisplayName)
+                  .commit();
+
               onStateChanged(true, mDisplayName);
               break;
             case BTAdapter.STATE_NONE:
@@ -37,25 +47,20 @@ public class SocketClient {
           }
           break;
         case Constants.MESSAGE_READ:
-          byte[] data = (byte[]) msg.obj;
-          int length = msg.arg1;
-          System.out.println("SocketClient.handleMessage " + length);
-          onEventReceived(Helper.parseFrom(data));
+          Proto.Event event = Helper.parseFrom((byte[]) msg.obj);
+          System.out.println("READ " + event + " " + event.type);
+          onEventReceived(event);
           break;
         case Constants.MESSAGE_DEVICE_NAME:
           // save the connected device's name
           mDisplayName = msg.getData().getString(Constants.DEVICE_NAME);
           break;
-        case Constants.MESSAGE_TOAST:
-          System.out.println("SocketClient.handleMessage " + msg.getData().getString(Constants.TOAST));
-          break;
       }
     }
   };
 
-  //  private Socket mSocket;
-  private WeakReference<OnEventReceived> mEventReceived;
-  private WeakReference<OnSocketStateChanged> mStateChanged;
+  private List<WeakReference<OnEventReceived>> mEventReceiveds = new ArrayList<>();
+  private List<WeakReference<OnSocketStateChanged>> mStateChangeds = new ArrayList<>();
 
   private String mDisplayName;
   private String mHostName;
@@ -66,12 +71,12 @@ public class SocketClient {
     mBtAdapter.setHandler(mHandler);
   }
 
-  public void setOnEventReceived(OnEventReceived listener) {
-    mEventReceived = new WeakReference<>(listener);
+  public void addEventReceivedListener(OnEventReceived listener) {
+    mEventReceiveds.add(new WeakReference<>(listener));
   }
 
-  public void setOnSocketStateChanged(OnSocketStateChanged listener) {
-    mStateChanged = new WeakReference<>(listener);
+  public void addSocketStateChangedListener(OnSocketStateChanged listener) {
+    mStateChangeds.add(new WeakReference<>(listener));
   }
 
   public boolean isConnected() {
@@ -83,6 +88,16 @@ public class SocketClient {
     onStateChanged(false, message);
   }
 
+  public boolean reconnectToLastDevice() {
+//    if (!Application.getSettingsPreferences().contains(HOST_NAME_KEY)) {
+//      return false;
+//    }
+//    String lastHost = Application.getSettingsPreferences().getString(HOST_NAME_KEY, "");
+//    mDisplayName = Application.getSettingsPreferences().getString(DISPLAY_NAME_KEY, "");
+//    return connectTo(lastHost);
+    return false;
+  }
+
   public void reconnectToLastHost() {
     if (!Application.getTempPreferences().contains(HOST_NAME_KEY)) {
       return;
@@ -92,10 +107,11 @@ public class SocketClient {
     connectTo(lastHost);
   }
 
-  public void connectTo(String hostName) {
+  public boolean connectTo(String hostName) {
+    mBtAdapter.stop();
     Log.d(TAG, "ConnectTo " + hostName + " " + mDisplayName);
     mHostName = hostName;
-    mBtAdapter.connect(hostName);
+    return mBtAdapter.connect(hostName);
   }
 
   public void disconnect() {
@@ -117,14 +133,26 @@ public class SocketClient {
   }
 
   private void onEventReceived(Proto.Event e) {
-    if (mEventReceived.get() != null) {
-      mEventReceived.get().onEventReceived(e);
+    Iterator<WeakReference<OnEventReceived>> it = mEventReceiveds.iterator();
+    while (it.hasNext()) {
+      WeakReference<OnEventReceived> l = it.next();
+      if (l.get() != null) {
+        l.get().onEventReceived(e);
+      } else {
+        it.remove();
+      }
     }
   }
 
   private void onStateChanged(boolean connect, String message) {
-    if (mStateChanged.get() != null) {
-      mStateChanged.get().onStateChanged(connect, message);
+    Iterator<WeakReference<OnSocketStateChanged>> it = mStateChangeds.iterator();
+    while (it.hasNext()) {
+      WeakReference<OnSocketStateChanged> l = it.next();
+      if (l.get() != null) {
+        l.get().onStateChanged(connect, message);
+      } else {
+        it.remove();
+      }
     }
   }
 }

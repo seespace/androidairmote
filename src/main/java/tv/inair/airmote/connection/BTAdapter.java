@@ -81,12 +81,16 @@ public class BTAdapter {
     this.mHandler = handler;
   }
 
-  public void connect(String address) {
-    connect(adapter.getRemoteDevice(address));
+  public boolean connect(String address) {
+    return connect(adapter.getRemoteDevice(address));
   }
 
-  public synchronized void connect(BluetoothDevice device) {
+  public synchronized boolean connect(BluetoothDevice device) {
     Log.d(TAG, "connect to: " + device);
+
+    if (device == null) {
+      return false;
+    }
 
     // Cancel any thread attempting to make a connection
     if (mState == STATE_CONNECTING) {
@@ -106,6 +110,7 @@ public class BTAdapter {
     mConnectThread = new ConnectThread(device);
     mConnectThread.start();
     setState(STATE_CONNECTING);
+    return true;
   }
 
   public synchronized void connected(BluetoothSocket socket, BluetoothDevice device, final String socketType) {
@@ -192,6 +197,8 @@ public class BTAdapter {
 
   private synchronized void setState(int state) {
     mState = state;
+
+    mHandler.obtainMessage(Constants.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
   }
 
   /**
@@ -293,7 +300,7 @@ public class BTAdapter {
 
     public void run() {
       Log.i(TAG, "BEGIN mConnectedThread");
-      byte[] buffer = new byte[1024];
+      byte[] buffer = new byte[4096];
       int bytes;
       int length;
 
@@ -314,6 +321,7 @@ public class BTAdapter {
           connectionLost();
           break;
         }
+
       }
     }
 
@@ -325,8 +333,6 @@ public class BTAdapter {
     public void write(byte[] buffer) {
       try {
         mDataOS.write(buffer);
-//        // Share the sent message back to the UI Activity
-//        mHandler.obtainMessage(Constants.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
       } catch (IOException e) {
         Log.e(TAG, "Exception during write", e);
       }

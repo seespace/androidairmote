@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import tv.inair.airmote.connection.BTAdapter;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.OnSocketStateChanged;
 import tv.inair.airmote.remote.GestureControl;
@@ -38,10 +39,10 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    adapter = BluetoothAdapter.getDefaultAdapter();
+    adapter = BTAdapter.getInstance().adapter;
 
-    Application.getSocketClient().setOnEventReceived(this);
-    Application.getSocketClient().setOnSocketStateChanged(this);
+    Application.getSocketClient().addEventReceivedListener(this);
+    Application.getSocketClient().addSocketStateChangedListener(this);
 
     if (Application.getSocketClient().isConnected()) {
       Toast.makeText(getActivity(), "Connected", Toast.LENGTH_SHORT).show();
@@ -74,44 +75,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     if (!adapter.isEnabled()) {
       Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
       startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-    } else if (!Application.getSocketClient().isConnected()) {
-      discoverInAiR();
+    } else {
+      tryToReconnectLastDevice();
     }
-  }
-
-  @Override
-  public void onResume() {
-    super.onResume();
-//    Application.getSocketClient().reconnectToLastHost();
-    //    if (!Application.getSocketClient().isConnected()) {
-    //      Application.getSocketClient().reconnectToLastHost();
-    //    }
-
-    // Performing this check in onResume() covers the case in which BT was
-    // not enabled during onStart(), so we were paused to enable it...
-    // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
-    //    if (mChatService != null) {
-    // Only if the state is STATE_NONE, do we know that we haven't started already
-    //      if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
-    //        // Start the Bluetooth chat services
-    //        mChatService.start();
-    //      }
-    //    }
-  }
-
-  @Override
-  public void onPause() {
-    //    Application.getSocketClient().disconnect();
-    super.onPause();
-  }
-
-  @Override
-  public void onStop() {
-//    Application.getSocketClient().disconnect();
-    //    if (adapter.isEnabled()) {
-    //      adapter.disable();
-    //    }
-    super.onStop();
   }
 
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -141,6 +107,12 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   boolean isDiscovering = false;
 
+  private void tryToReconnectLastDevice() {
+    if (!Application.getSocketClient().isConnected() && !Application.getSocketClient().reconnectToLastDevice()) {
+      discoverInAiR();
+    }
+  }
+
   private void discoverInAiR() {
     if (!adapter.isDiscovering() && !isDiscovering) {
       isDiscovering = true;
@@ -152,17 +124,22 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onEventReceived(Proto.Event event) {
-    switch (event.type) {
-      case Proto.Event.OAUTH_REQUEST:
-        Proto.OAuthRequestEvent oAuthEvent = event.getExtension(Proto.OAuthRequestEvent.event);
-        Intent i = new Intent(getActivity(), WebviewActivity.class);
-        i.putExtra(WebviewActivity.EXTRA_URL, oAuthEvent.authUrl);
-        i.putExtra(WebviewActivity.EXTRA_REPLY_TO, event.replyTo);
-        startActivity(i);
-        break;
-      case Proto.Event.TEXT_INPUT_REQUEST:
-//        processTextInput();
-        break;
+    if (event != null && event.type != null) {
+      switch (event.type) {
+        case Proto.Event.OAUTH_REQUEST:
+          Proto.OAuthRequestEvent oAuthEvent = event.getExtension(Proto.OAuthRequestEvent.event);
+          Intent i = new Intent(getActivity(), WebviewActivity.class);
+          i.putExtra(WebviewActivity.EXTRA_URL, oAuthEvent.authUrl);
+          i.putExtra(WebviewActivity.EXTRA_REPLY_TO, event.replyTo);
+          startActivity(i);
+          break;
+        case Proto.Event.TEXT_INPUT_REQUEST:
+          //        processTextInput();
+          break;
+
+        default:
+          System.out.println(event.type);
+      }
     }
   }
 
@@ -173,10 +150,13 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
       } else {
-        discoverInAiR();
+        tryToReconnectLastDevice();
       }
     } else {
       Toast.makeText(getActivity(), "Connected " + message, Toast.LENGTH_SHORT).show();
+
+      Intent i = new Intent(getActivity(), WifiListActivity.class);
+      startActivity(i);
     }
   }
 }

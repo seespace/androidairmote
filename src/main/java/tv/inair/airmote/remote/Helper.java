@@ -256,6 +256,14 @@ public class Helper {
   }
   //endregion
 
+  //region Wifi setup request
+  public static Proto.Event setupWifiScanRequest() {
+    Proto.SetupRequestEvent event = new Proto.SetupRequestEvent();
+    event.phase = Proto.REQUEST_WIFI_SCAN;
+    return buildEvent(0, 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
+  }
+  //endregion
+
   //region Wifi setup
   public static Proto.Event newCodeResponseEvent(String code) {
     Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();

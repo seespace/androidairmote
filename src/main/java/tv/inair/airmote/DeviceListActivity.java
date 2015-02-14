@@ -29,7 +29,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -45,7 +44,7 @@ import tv.inair.airmote.connection.BTAdapter;
  * by the user, the MAC address of the device is sent back to the parent
  * Activity in the result Intent.
  */
-public class DeviceListActivity extends Activity {
+public class DeviceListActivity extends Activity implements AdapterView.OnItemClickListener {
 
   /**
    * Tag for Log
@@ -75,47 +74,19 @@ public class DeviceListActivity extends Activity {
 
     // Setup the window
     //    requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-    setContentView(R.layout.activity_device_list);
+    setContentView(R.layout.activity_list);
 
     // Set result CANCELED in case the user backs out
     setResult(Activity.RESULT_CANCELED);
 
-    // Initialize the button to perform device discovery
-    Button scanButton = (Button) findViewById(R.id.button_scan);
-    scanButton.setOnClickListener(new View.OnClickListener() {
-      public void onClick(View v) {
-        doDiscovery();
-        v.setVisibility(View.GONE);
-      }
-    });
-
     // Initialize array adapters. One for already paired devices and
     // one for newly discovered devices
-//    ArrayAdapter<String> pairedDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
-    mNewDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
-
-    //    // Find and set up the ListView for paired devices
-    //    ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
-    //    pairedListView.setAdapter(pairedDevicesArrayAdapter);
-    //    pairedListView.setOnItemClickListener(mDeviceClickListener);
+    mNewDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_item);
 
     // Find and set up the ListView for newly discovered devices
-    ListView newDevicesListView = (ListView) findViewById(R.id.new_devices);
+    ListView newDevicesListView = (ListView) findViewById(R.id.listview);
     newDevicesListView.setAdapter(mNewDevicesArrayAdapter);
-    newDevicesListView.setOnItemClickListener(mDeviceClickListener);
-
-    //    // Get a set of currently paired devices
-    //    Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-    //
-    //    // If there are paired devices, add each one to the ArrayAdapter
-    //    if (pairedDevices.size() > 0) {
-    //      findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
-    //      for (BluetoothDevice device : pairedDevices) {
-    //        pairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-    //      }
-    //    } else {
-    //      pairedDevicesArrayAdapter.add("No Devices");
-    //    }
+    newDevicesListView.setOnItemClickListener(this);
 
     doDiscovery();
   }
@@ -124,13 +95,15 @@ public class DeviceListActivity extends Activity {
   protected void onDestroy() {
     super.onDestroy();
 
+    System.out.println("DeviceListActivity.onDestroy");
+
+    // Unregister broadcast listeners
+    unregisterReceiver(mReceiver);
+
     // Make sure we're not doing discovery anymore
     if (BTAdapter.getInstance().adapter != null) {
       BTAdapter.getInstance().adapter.cancelDiscovery();
     }
-
-    // Unregister broadcast listeners
-    this.unregisterReceiver(mReceiver);
   }
 
   /**
@@ -157,24 +130,23 @@ public class DeviceListActivity extends Activity {
   /**
    * The on-click listener for all devices in the ListViews
    */
-  private AdapterView.OnItemClickListener mDeviceClickListener = new AdapterView.OnItemClickListener() {
-    public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
-      // Cancel discovery because it's costly and we're about to connect
-      BTAdapter.getInstance().adapter.cancelDiscovery();
+  @Override
+  public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
+    // Cancel discovery because it's costly and we're about to connect
+    BTAdapter.getInstance().adapter.cancelDiscovery();
 
-      // Get the device MAC address, which is the last 17 chars in the View
-      String info = ((TextView) v).getText().toString();
-      String address = info.substring(info.length() - 17);
+    // Get the device MAC address, which is the last 17 chars in the View
+    String info = ((TextView) v).getText().toString();
+    String address = info.substring(info.length() - 17);
 
-      // Create the result Intent and include the MAC address
-      Intent intent = new Intent();
-      intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
+    // Create the result Intent and include the MAC address
+    Intent intent = new Intent();
+    intent.putExtra(EXTRA_DEVICE_ADDRESS, address);
 
-      // Set result and finish this Activity
-      setResult(Activity.RESULT_OK, intent);
-      finish();
-    }
-  };
+    // Set result and finish this Activity
+    setResult(Activity.RESULT_OK, intent);
+    finish();
+  }
 
   List<BluetoothDevice> mApplicants = new ArrayList<>();
   List<BluetoothDevice> mAdded = new ArrayList<>();
