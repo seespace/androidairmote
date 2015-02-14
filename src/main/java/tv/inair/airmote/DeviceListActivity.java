@@ -194,7 +194,7 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
           System.out.println(device.getName() + " " + Arrays.toString(device.getUuids()));
           if (BTAdapter.getInstance().checkIfInAiR(device.getUuids())) {
             addDevice(device);
-          } else {
+          } else if ("inAiR".equals(device.getName())) {
             mApplicants.add(device);
           }
         }
@@ -203,21 +203,20 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
           System.out.println("FINISH");
           for (BluetoothDevice device : mApplicants) {
             device.fetchUuidsWithSdp();
-            System.out.println("DeviceListActivity.onReceive " + device.getName());
           }
           checkIfHasOnlyOneDevice();
-          if (mApplicants.isEmpty()) {
+          if (mApplicants.isEmpty() && mNewDevicesArrayAdapter.isEmpty()) {
             setProgressBarIndeterminateVisibility(false);
             mNewDevicesArrayAdapter.add("No Devices");
           }
           break;
         case BluetoothDevice.ACTION_UUID: {
-
           setProgressBarIndeterminateVisibility(false);
 
           BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
           mApplicants.remove(device);
           Parcelable[] uuids = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+          System.out.println("onReceive " + device.getName() + " " + Arrays.toString(uuids));
           if (BTAdapter.getInstance().checkIfInAiR(uuids)) {
             addDevice(device);
           }

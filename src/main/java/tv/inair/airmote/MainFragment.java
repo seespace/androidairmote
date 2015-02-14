@@ -145,11 +145,12 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onStateChanged(boolean connect, String message) {
+    System.out.println("MainFragment.onStateChanged " + connect + " " + message);
     if (!connect) {
       if (!adapter.isEnabled()) {
         Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
         startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-      } else {
+      } else if (!isDiscovering) {
         tryToReconnectLastDevice();
       }
     } else {

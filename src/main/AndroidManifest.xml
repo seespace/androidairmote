@@ -39,7 +39,7 @@
     <activity
         android:name=".WifiConnectActivity"
         android:parentActivityName=".WifiListActivity"
-        android:theme="@android:style/Theme.Dialog"
+        android:theme="@android:style/Theme.DeviceDefault"
         >
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"

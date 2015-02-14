@@ -3,8 +3,6 @@ package tv.inair.airmote.remote;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
-import android.net.wifi.ScanResult;
-import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.view.Display;
@@ -14,7 +12,6 @@ import com.google.protobuf.nano.InvalidProtocolBufferNanoException;
 import com.google.protobuf.nano.MessageNano;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * Copyright (c) 2014 SeeSpace.co. All rights reserved.
@@ -262,77 +259,13 @@ public class Helper {
     event.phase = Proto.REQUEST_WIFI_SCAN;
     return buildEvent(0, 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
   }
-  //endregion
 
-  //region Wifi setup
-  public static Proto.Event newCodeResponseEvent(String code) {
-    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
-    event.phase = Proto.REQUEST_CODE;
-    event.error = false;
-    event.code = code;
-
-    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
-        .setExtension(Proto.SetupResponseEvent.event, event);
-  }
-
-  public static Proto.Event newRenameResponseEvent(boolean error, String errorMessage) {
-    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
-    event.phase = Proto.REQUEST_RENAME;
-    event.error = error;
-    event.errorMessage = errorMessage;
-
-    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
-        .setExtension(Proto.SetupResponseEvent.event, event);
-  }
-
-  public static Proto.Event newRenameResponseEvent() {
-    return newRenameResponseEvent(false, "");
-  }
-
-  public static Proto.Event newNetworkListResponseEvent(String errorMessage) {
-    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
-    event.phase = Proto.REQUEST_WIFI_SCAN;
-    event.error = true;
-    event.errorMessage = errorMessage;
-
-    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
-        .setExtension(Proto.SetupResponseEvent.event, event);
-  }
-
-  public static Proto.Event newNetworkListResponseEvent(List<ScanResult> scanResults) {
-    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
-    event.phase = Proto.REQUEST_WIFI_SCAN;
-    event.error = false;
-
-    if (scanResults.size() > 0) {
-      event.wifiNetworks = new Proto.WifiNetwork[scanResults.size()];
-      for (int i = 0; i < scanResults.size(); i++) {
-        ScanResult result = scanResults.get(i);
-        Proto.WifiNetwork network = new Proto.WifiNetwork();
-        network.ssid = result.SSID;
-        network.bssid = result.BSSID;
-        network.strength = WifiManager.calculateSignalLevel(result.level, 4);
-        network.capabilities = result.capabilities;
-        event.wifiNetworks[i] = network;
-      }
-    }
-
-    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
-        .setExtension(Proto.SetupResponseEvent.event, event);
-  }
-
-  public static Proto.Event newNetworkConnectResponseEvent() {
-    return newNetworkConnectResponseEvent(false, "");
-  }
-
-  public static Proto.Event newNetworkConnectResponseEvent(boolean error, String errorMessage) {
-    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
+  public static Proto.Event setupWifiConnectRequestWithSSID(String ssid, String password) {
+    Proto.SetupRequestEvent event = new Proto.SetupRequestEvent();
     event.phase = Proto.REQUEST_WIFI_CONNECT;
-    event.error = error;
-    event.errorMessage = errorMessage;
-
-    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
-        .setExtension(Proto.SetupResponseEvent.event, event);
+    event.ssid = ssid;
+    event.password = password;
+    return buildEvent(0, 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
   }
   //endregion
 }

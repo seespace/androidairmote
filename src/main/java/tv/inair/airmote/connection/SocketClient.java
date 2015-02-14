@@ -48,7 +48,6 @@ public class SocketClient {
           break;
         case Constants.MESSAGE_READ:
           Proto.Event event = Helper.parseFrom((byte[]) msg.obj);
-          System.out.println("READ " + event + " " + event.type);
           onEventReceived(event);
           break;
         case Constants.MESSAGE_DEVICE_NAME:
@@ -108,7 +107,6 @@ public class SocketClient {
   }
 
   public boolean connectTo(String hostName) {
-    mBtAdapter.stop();
     Log.d(TAG, "ConnectTo " + hostName + " " + mDisplayName);
     mHostName = hostName;
     return mBtAdapter.connect(hostName);

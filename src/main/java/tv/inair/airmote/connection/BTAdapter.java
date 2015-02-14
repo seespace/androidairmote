@@ -163,7 +163,9 @@ public class BTAdapter {
     ConnectedThread r;
     // Synchronize a copy of the ConnectedThread
     synchronized (this) {
-      if (mState != STATE_CONNECTED) return;
+      if (mState != STATE_CONNECTED) {
+        return;
+      }
       r = mConnectedThread;
     }
     // Perform the write unsynchronized
@@ -178,26 +180,15 @@ public class BTAdapter {
    * Indicate that the connection attempt failed and notify the UI Activity.
    */
   private void connectionFailed() {
-    // Send a failure message back to the Activity
-//    Message msg = mHandler.obtainMessage(Constants.MESSAGE_TOAST);
-//    Bundle bundle = new Bundle();
-//    bundle.putString(Constants.TOAST, "Unable to connect device");
-//    msg.setData(bundle);
-//    mHandler.sendMessage(msg);
+    setState(STATE_NONE);
   }
 
   private void connectionLost() {
-    // Send a failure message back to the Activity
-//    Message msg = mHandler.obtainMessage(Constants.MESSAGE_TOAST);
-//    Bundle bundle = new Bundle();
-//    bundle.putString(Constants.TOAST, "Device connection was lost");
-//    msg.setData(bundle);
-//    mHandler.sendMessage(msg);
+    setState(STATE_NONE);
   }
 
   private synchronized void setState(int state) {
     mState = state;
-
     mHandler.obtainMessage(Constants.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
   }
 
@@ -220,7 +211,7 @@ public class BTAdapter {
       // given BluetoothDevice
       try {
         tmp = device.createInsecureRfcommSocketToServiceRecord(MY_UUID_INSECURE);
-//        tmp = device.createRfcommSocketToServiceRecord(MY_UUID_SECURE);
+        //        tmp = device.createRfcommSocketToServiceRecord(MY_UUID_SECURE);
       } catch (IOException e) {
         Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
       }
@@ -275,8 +266,8 @@ public class BTAdapter {
    */
   private class ConnectedThread extends Thread {
     private final BluetoothSocket mmSocket;
-//    private final InputStream mmInStream;
-//    private final OutputStream mmOutStream;
+    //    private final InputStream mmInStream;
+    //    private final OutputStream mmOutStream;
     private final DataInputStream mDataIS;
     private final DataOutputStream mDataOS;
 
@@ -301,20 +292,17 @@ public class BTAdapter {
     public void run() {
       Log.i(TAG, "BEGIN mConnectedThread");
       byte[] buffer = new byte[4096];
-      int bytes;
       int length;
 
       // Keep listening to the InputStream while connected
       while (true) {
         try {
           if (mDataIS.available() > 0) {
-            System.out.println("Avail: " + mDataIS.available());
             length = mDataIS.readInt();
-            bytes = mDataIS.read(buffer);
-            System.out.println("RECEIVE: " + bytes + " " + length);
+            mDataIS.readFully(buffer, 0, length);
 
             // Send the obtained bytes to the UI Activity
-            mHandler.obtainMessage(Constants.MESSAGE_READ, bytes, -1, Arrays.copyOf(buffer, length)).sendToTarget();
+            mHandler.obtainMessage(Constants.MESSAGE_READ, length, -1, Arrays.copyOf(buffer, length)).sendToTarget();
           }
         } catch (IOException e) {
           Log.e(TAG, "disconnected", e);

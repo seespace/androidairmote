@@ -90,6 +90,9 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
   @Override
   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     super.onActivityResult(requestCode, resultCode, data);
+    if (resultCode == RESULT_OK) {
+      finish();
+    }
   }
 
   @Override
@@ -101,31 +104,19 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
 
   @Override
   public void onEventReceived(Proto.Event event) {
-    if (event != null && event.type != null && event.type == Proto.Event.SETUP_RESPONSE) {
+    if (event != null && event.type != null) {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
-      switch (responseEvent.phase) {
-        case Proto.REQUEST_WIFI_SCAN:
-          if (responseEvent.wifiNetworks != null && responseEvent.wifiNetworks.length > 0) {
-            adapter.clear();
-            for (Proto.WifiNetwork wifi : responseEvent.wifiNetworks) {
-              RowItem item = new RowItem();
-              item.ssid = wifi.ssid;
-              adapter.add(item);
-            }
-          } else {
-            Toast.makeText(this, "No wifi available", Toast.LENGTH_SHORT).show();
-            finish();
+      if (responseEvent.phase == Proto.REQUEST_WIFI_SCAN) {
+        if (responseEvent.wifiNetworks != null && responseEvent.wifiNetworks.length > 0) {
+          adapter.clear();
+          for (Proto.WifiNetwork wifi : responseEvent.wifiNetworks) {
+            RowItem item = new RowItem();
+            item.ssid = wifi.ssid;
+            adapter.add(item);
           }
-          break;
-
-        case Proto.REQUEST_WIFI_CONNECT: {
-          if (responseEvent.error) {
-            Toast.makeText(this, responseEvent.errorMessage, Toast.LENGTH_SHORT).show();
-          } else {
-            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-            finish();
-          }
-          break;
+        } else {
+          Toast.makeText(this, "No wifi available", Toast.LENGTH_SHORT).show();
+          finish();
         }
       }
     }
