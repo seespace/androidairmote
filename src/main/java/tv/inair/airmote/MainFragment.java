@@ -250,8 +250,8 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
       switch (action) {
         case Intent.ACTION_BATTERY_CHANGED:
           boolean isPC = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == BatteryManager.BATTERY_PLUGGED_USB;
-          Toast.makeText(getActivity(), "Battery changed " + isPC, Toast.LENGTH_SHORT).show();
-          if (isPC) {
+          if (isPC && !Application.getSocketClient().isConnected()) {
+            Toast.makeText(getActivity(), "Battery changed " + isPC, Toast.LENGTH_SHORT).show();
             quickScanAndConnect();
           }
           break;
@@ -359,8 +359,8 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     } else {
       Toast.makeText(getActivity(), "Connected " + message, Toast.LENGTH_SHORT).show();
 
-      Intent i = new Intent(getActivity(), WifiListActivity.class);
-      startActivity(i);
+//      Intent i = new Intent(getActivity(), WifiListActivity.class);
+//      startActivity(i);
     }
   }
 
