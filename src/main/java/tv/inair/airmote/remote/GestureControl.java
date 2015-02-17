@@ -46,8 +46,25 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
     element.setOnTouchListener(this);
   }
 
+  public interface Listener {
+    void onEvent();
+  }
+
+  private Listener mListener;
+
+  private void onEvent() {
+    if (mListener != null) {
+      mListener.onEvent();
+    }
+  }
+
+  public void setListener(Listener listener) {
+    mListener = listener;
+  }
+
   @Override
   public boolean onTouch(View v, MotionEvent event) {
+    onEvent();
     Integer phase = null;
     switch (event.getActionMasked()) {
       case MotionEvent.ACTION_DOWN:

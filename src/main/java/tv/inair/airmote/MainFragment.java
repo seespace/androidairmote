@@ -27,12 +27,11 @@ import tv.inair.airmote.remote.Proto;
  * <p/>
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
-public class MainFragment extends Fragment implements OnEventReceived, OnSocketStateChanged {
+public class MainFragment extends Fragment implements OnEventReceived, OnSocketStateChanged, GestureControl.Listener {
   private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
   private static final int REQUEST_ENABLE_BT = 2;
 
-  private GestureControl mGestureControl;
-
+  //region Override parent
   private BluetoothAdapter adapter;
 
   @Override
@@ -58,6 +57,10 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     return inflater.inflate(R.layout.fragment_main, container, false);
   }
 
+  private GestureControl mGestureControl;
+  private View mControlView;
+  private View mControlContainer;
+
   @Override
   public void onViewCreated(View view,
       @Nullable
@@ -65,6 +68,39 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     super.onViewCreated(view, savedInstanceState);
 
     mGestureControl = new GestureControl(getActivity(), view.findViewById(R.id.rootView));
+    mControlView = view.findViewById(R.id.controlView);
+    mControlContainer = view.findViewById(R.id.controlContainer);
+
+    view.findViewById(R.id.moreBtn).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        toggleControlView();
+      }
+    });
+
+    view.findViewById(R.id.scanBtn).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        handleScanDevices();
+        hideControlView();
+      }
+    });
+
+    view.findViewById(R.id.threeDBtn).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        switchDisplayMode();
+        hideControlView();
+      }
+    });
+
+    view.findViewById(R.id.settingBtn).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        settingDevice();
+        hideControlView();
+      }
+    });
   }
 
   @Override
@@ -78,8 +114,17 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     } else {
       tryToReconnectLastDevice();
     }
+
+    mGestureControl.setListener(this);
   }
 
+  @Override
+  public void onResume() {
+    super.onResume();
+    hideControlView();
+  }
+
+  @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
     switch (requestCode) {
       case REQUEST_CONNECT_DEVICE_SECURE:
@@ -104,12 +149,48 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         }
     }
   }
+  //endregion
 
+  //region Buttons
+  private boolean isShow = true;
+
+  private void toggleControlView() {
+    if (isShow) {
+      hideControlView();
+    } else {
+      showControlView();
+    }
+  }
+
+  private void showControlView() {
+    isShow = true;
+    mControlView.animate().translationY(0).setDuration(250);
+  }
+
+  private void hideControlView() {
+    isShow = false;
+    mControlView.animate().translationY(mControlContainer.getHeight()).setDuration(250);
+  }
+
+  private void handleScanDevices() {
+    Toast.makeText(getActivity(), "Not implemented yet", Toast.LENGTH_SHORT).show();
+  }
+
+  private void switchDisplayMode() {
+    Toast.makeText(getActivity(), "Not implemented yet", Toast.LENGTH_SHORT).show();
+  }
+
+  private void settingDevice() {
+    Toast.makeText(getActivity(), "Not implemented yet", Toast.LENGTH_SHORT).show();
+  }
+  //endregion
+
+  //region Connect InAiR
   boolean isDiscovering = false;
 
   private void tryToReconnectLastDevice() {
     if (!Application.getSocketClient().isConnected() && !Application.getSocketClient().reconnectToLastDevice()) {
-      discoverInAiR();
+      //      discoverInAiR();
     }
   }
 
@@ -117,11 +198,14 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     if (!adapter.isDiscovering() && !isDiscovering) {
       isDiscovering = true;
       System.out.println("MainActivity.discoverInAiR");
-      Intent serverIntent = new Intent(getActivity(), DeviceListActivity.class);
-      startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_SECURE);
+      Intent i = new Intent(getActivity(), DeviceListActivity.class);
+      i.putExtra(DeviceListActivity.EXTRA_QUICK_CONNECT, true);
+      startActivityForResult(i, REQUEST_CONNECT_DEVICE_SECURE);
     }
   }
+  //endregion
 
+  //region Implement
   @Override
   public void onEventReceived(Proto.Event event) {
     if (event != null && event.type != null) {
@@ -160,4 +244,10 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
       startActivity(i);
     }
   }
+
+  @Override
+  public void onEvent() {
+    hideControlView();
+  }
+  //endregion
 }

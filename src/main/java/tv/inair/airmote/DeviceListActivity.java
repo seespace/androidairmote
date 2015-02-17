@@ -17,6 +17,7 @@
 package tv.inair.airmote;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -54,16 +55,29 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
   /**
    * Return Intent extra
    */
-  public static String EXTRA_DEVICE_ADDRESS = "device_address";
+  public static final String EXTRA_DEVICE_ADDRESS = "device_address";
+
+  public static final String EXTRA_QUICK_CONNECT = "quick_connect";
 
   /**
    * Newly discovered devices
    */
   private ArrayAdapter<String> mNewDevicesArrayAdapter;
 
+  private ProgressDialog progress;
+  private boolean isQuickConnect;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    Intent i = getIntent();
+    isQuickConnect = i.getBooleanExtra(EXTRA_QUICK_CONNECT, false);
+
+    if (isQuickConnect) {
+      progress = ProgressDialog.show(this, "", "Loading...", true);
+      setVisible(false);
+    }
 
     // Register for broadcasts when a device is discovered
     IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -96,6 +110,10 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
     super.onDestroy();
 
     System.out.println("DeviceListActivity.onDestroy");
+
+    if (progress.isShowing()) {
+      progress.dismiss();
+    }
 
     // Unregister broadcast listeners
     unregisterReceiver(mReceiver);
@@ -165,13 +183,18 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
     if (mApplicants.isEmpty() & mAdded.size() == 1) {
       System.out.println("DeviceListActivity.checkIfHasOnlyOneDevice");
       // Create the result Intent and include the MAC address
-      Intent i = new Intent();
-      i.putExtra(EXTRA_DEVICE_ADDRESS, mAdded.get(0).getAddress());
-
-      // Set result and finish this Activity
-      setResult(Activity.RESULT_OK, i);
-      finish();
+      connect(mAdded.get(0));
     }
+  }
+
+  private void connect(BluetoothDevice device) {
+    BTAdapter.getInstance().adapter.cancelDiscovery();
+    Intent i = new Intent();
+    i.putExtra(EXTRA_DEVICE_ADDRESS, device.getAddress());
+
+    // Set result and finish this Activity
+    setResult(Activity.RESULT_OK, i);
+    finish();
   }
 
   /**
@@ -192,9 +215,14 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
             return;
           }
           System.out.println(device.getName() + " " + Arrays.toString(device.getUuids()));
-          if (BTAdapter.getInstance().checkIfInAiR(device.getUuids())) {
+          boolean hasInAiR = BTAdapter.getInstance().checkIfInAiR(device.getUuids());
+          boolean potentialInAiR = "inAiR".equals(device.getName());
+          if (isQuickConnect && (hasInAiR || potentialInAiR)) {
+            connect(device);
+          }
+          if (hasInAiR) {
             addDevice(device);
-          } else if ("inAiR".equals(device.getName())) {
+          } else if (potentialInAiR) {
             mApplicants.add(device);
           }
         }
