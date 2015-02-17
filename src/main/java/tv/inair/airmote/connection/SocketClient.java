@@ -70,6 +70,10 @@ public class SocketClient {
     mBtAdapter.setHandler(mHandler);
   }
 
+  public String getDisplayName() {
+    return mDisplayName;
+  }
+
   public void addEventReceivedListener(OnEventReceived listener) {
     mEventReceiveds.add(new WeakReference<>(listener));
   }

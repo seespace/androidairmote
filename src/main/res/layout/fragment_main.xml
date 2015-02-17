@@ -36,6 +36,25 @@
 
       <LinearLayout
           style="@style/Button"
+          android:id="@+id/threeDBtn"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_horizontal" android:src="@drawable/mode2d3d"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="Display"
+            android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>
+
+      </LinearLayout>
+
+      <LinearLayout
+          style="@style/Button"
           android:id="@+id/scanBtn"
           android:layout_width="match_parent"
           android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
@@ -49,25 +68,6 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:text="Scan"
-            android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>
-
-      </LinearLayout>
-
-      <LinearLayout
-          style="@style/Button"
-          android:id="@+id/threeDBtn"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_gravity="center_horizontal" android:src="@drawable/mode2d3d"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="2D/3D"
             android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>
 
       </LinearLayout>

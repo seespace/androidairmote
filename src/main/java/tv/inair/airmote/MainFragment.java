@@ -2,7 +2,12 @@ package tv.inair.airmote;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -11,6 +16,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+
+import java.util.Arrays;
 
 import tv.inair.airmote.connection.BTAdapter;
 import tv.inair.airmote.connection.OnEventReceived;
@@ -44,8 +51,11 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     Application.getSocketClient().addSocketStateChangedListener(this);
 
     if (Application.getSocketClient().isConnected()) {
-      Toast.makeText(getActivity(), "Connected", Toast.LENGTH_SHORT).show();
+      Toast.makeText(getActivity(), "Connected " + Application.getSocketClient().getDisplayName(), Toast.LENGTH_SHORT)
+          .show();
     }
+
+    setupListener();
   }
 
   @Override
@@ -103,6 +113,29 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     });
   }
 
+  //  private CountDownTimer mTimer = new CountDownTimer(200, 200) {
+  //    @Override
+  //    public void onTick(long millisUntilFinished) {
+  //
+  //    }
+  //
+  //    @Override
+  //    public void onFinish() {
+  //      final View decorView = getActivity().getWindow().getDecorView();
+  //      // Hide both the navigation bar and the status bar.
+  //      // SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
+  //      // a general rule, you should design your app to hide the status bar whenever you
+  //      // hide the navigation bar.
+  //      int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+  //      decorView.setSystemUiVisibility(uiOptions);
+  //      if (!needStop) {
+  //        mTimer.start();
+  //      }
+  //    }
+  //  };
+  //
+  //  private boolean needStop = false;
+
   @Override
   public void onStart() {
     super.onStart();
@@ -122,6 +155,25 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   public void onResume() {
     super.onResume();
     hideControlView();
+    //    needStop = false;
+    //    mTimer.start();
+  }
+
+  //  @Override
+  //  public void onPause() {
+  //    needStop = true;
+  //    mTimer.cancel();
+  //    super.onPause();
+  //  }
+
+  @Override
+  public void onDestroy() {
+    if (adapter.isDiscovering()) {
+      adapter.cancelDiscovery();
+    }
+    getActivity().unregisterReceiver(mBluetoothReceiver);
+    getActivity().unregisterReceiver(mUSBReceiver);
+    super.onDestroy();
   }
 
   @Override
@@ -185,6 +237,73 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
   //endregion
 
+  private void setupListener() {
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+    getActivity().registerReceiver(mUSBReceiver, filter);
+  }
+
+  private final BroadcastReceiver mUSBReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      String action = intent.getAction();
+      switch (action) {
+        case Intent.ACTION_BATTERY_CHANGED:
+          boolean isPC = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == BatteryManager.BATTERY_PLUGGED_USB;
+          Toast.makeText(getActivity(), "Battery changed " + isPC, Toast.LENGTH_SHORT).show();
+          if (isPC) {
+            quickScanAndConnect();
+          }
+          break;
+      }
+    }
+  };
+
+  private void quickScanAndConnect() {
+    // Register for broadcasts when a device is discovered
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(BluetoothDevice.ACTION_FOUND);
+    filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+    getActivity().registerReceiver(mBluetoothReceiver, filter);
+    adapter.startDiscovery();
+  }
+
+  /**
+   * The BroadcastReceiver that listens for discovered devices and changes the title when
+   * discovery is finished
+   */
+  private final BroadcastReceiver mBluetoothReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      String action = intent.getAction();
+
+      // When discovery finds a device
+      switch (action) {
+        case BluetoothDevice.ACTION_FOUND: {
+          // Get the BluetoothDevice object from the Intent
+          BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+          if (device.getName() == null) {
+            return;
+          }
+          System.out.println(device.getName() + " " + Arrays.toString(device.getUuids()));
+          Toast.makeText(getActivity(), "Found " + device.getName(), Toast.LENGTH_SHORT).show();
+          boolean hasInAiR = BTAdapter.getInstance().checkIfInAiR(device.getUuids());
+          boolean potentialInAiR = "inAiR".equals(device.getName());
+          if ((hasInAiR || potentialInAiR)) {
+            adapter.cancelDiscovery();
+            Toast.makeText(getActivity(), "Connecting " + device.getName() + " " + device.getAddress(), Toast.LENGTH_SHORT)
+                .show();
+            Application.getSocketClient().connectTo(device.getAddress());
+          }
+          break;
+        }
+        case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
+          System.out.println("FINISH");
+          break;
+      }
+    }
+  };
+
   //region Connect InAiR
   boolean isDiscovering = false;
 
@@ -196,11 +315,11 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   private void discoverInAiR() {
     if (!adapter.isDiscovering() && !isDiscovering) {
-      isDiscovering = true;
-      System.out.println("MainActivity.discoverInAiR");
-      Intent i = new Intent(getActivity(), DeviceListActivity.class);
-      i.putExtra(DeviceListActivity.EXTRA_QUICK_CONNECT, true);
-      startActivityForResult(i, REQUEST_CONNECT_DEVICE_SECURE);
+      //      isDiscovering = true;
+      //      System.out.println("MainActivity.discoverInAiR");
+      //      Intent i = new Intent(getActivity(), DeviceListActivity.class);
+      //      i.putExtra(DeviceListActivity.EXTRA_QUICK_CONNECT, true);
+      //      startActivityForResult(i, REQUEST_CONNECT_DEVICE_SECURE);
     }
   }
   //endregion
