@@ -16,6 +16,8 @@ import tv.inair.airmote.connection.SocketClient;
  */
 public class Application extends android.app.Application {
 
+  public static final String FIRST_TIME_KEY = "#first_time";
+
   private static SocketClient mSocketClient;
   public static SocketClient getSocketClient() {
     return mSocketClient;

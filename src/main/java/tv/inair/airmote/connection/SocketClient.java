@@ -92,13 +92,13 @@ public class SocketClient {
   }
 
   public boolean reconnectToLastDevice() {
-//    if (!Application.getSettingsPreferences().contains(HOST_NAME_KEY)) {
-//      return false;
-//    }
-//    String lastHost = Application.getSettingsPreferences().getString(HOST_NAME_KEY, "");
-//    mDisplayName = Application.getSettingsPreferences().getString(DISPLAY_NAME_KEY, "");
-//    return connectTo(lastHost);
-    return false;
+    if (!Application.getSettingsPreferences().contains(HOST_NAME_KEY)) {
+      return false;
+    }
+    String lastHost = Application.getSettingsPreferences().getString(HOST_NAME_KEY, "");
+    mDisplayName = Application.getSettingsPreferences().getString(DISPLAY_NAME_KEY, "");
+    return connectTo(lastHost);
+//    return false;
   }
 
   public void reconnectToLastHost() {

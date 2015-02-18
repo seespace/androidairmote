@@ -32,6 +32,8 @@ import android.support.v4.app.FragmentTransaction;
 
 public class MainActivity extends FragmentActivity {
 
+  MainFragment fragment;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -39,9 +41,16 @@ public class MainActivity extends FragmentActivity {
 
     if (savedInstanceState == null) {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-      MainFragment fragment = new MainFragment();
+      fragment = new MainFragment();
       transaction.replace(R.id.fragment, fragment);
       transaction.commit();
+    }
+  }
+
+  @Override
+  public void onBackPressed() {
+    if (!fragment.onBackPressed()) {
+      super.onBackPressed();
     }
   }
 }

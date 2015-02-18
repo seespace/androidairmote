@@ -15,15 +15,16 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.widget.ImageView;
 import android.widget.Toast;
-
-import java.util.Arrays;
 
 import tv.inair.airmote.connection.BTAdapter;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.OnSocketStateChanged;
 import tv.inair.airmote.remote.GestureControl;
 import tv.inair.airmote.remote.Proto;
+import tv.inair.airmote.utils.BitmapHelper;
 
 /**
  * <p>
@@ -51,8 +52,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     Application.getSocketClient().addSocketStateChangedListener(this);
 
     if (Application.getSocketClient().isConnected()) {
-      Toast.makeText(getActivity(), "Connected " + Application.getSocketClient().getDisplayName(), Toast.LENGTH_SHORT)
-          .show();
+      Toast.makeText(getActivity(), "Connected " + Application.getSocketClient().getDisplayName(), Toast.LENGTH_SHORT).show();
+    } else {
+      Application.getSocketClient().reconnectToLastDevice();
     }
 
     setupListener();
@@ -68,8 +70,10 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   private GestureControl mGestureControl;
+  private View mRootView;
   private View mControlView;
   private View mControlContainer;
+  private ImageView mGuideImage;
 
   @Override
   public void onViewCreated(View view,
@@ -77,9 +81,17 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
       Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
-    mGestureControl = new GestureControl(getActivity(), view.findViewById(R.id.rootView));
+    mRootView = view.findViewById(R.id.rootView);
     mControlView = view.findViewById(R.id.controlView);
     mControlContainer = view.findViewById(R.id.controlContainer);
+    mGuideImage = ((ImageView) view.findViewById(R.id.imageView));
+
+    final ImageView moreBtn = ((ImageView) view.findViewById(R.id.moreBtn));
+    final ImageView scan = ((ImageView) view.findViewById(R.id.scan));
+    final ImageView mode2d3d = ((ImageView) view.findViewById(R.id.mode2d3d));
+    final ImageView settings = ((ImageView) view.findViewById(R.id.settings));
+
+    mGestureControl = new GestureControl(getActivity(), mRootView);
 
     view.findViewById(R.id.moreBtn).setOnClickListener(new View.OnClickListener() {
       @Override
@@ -111,39 +123,40 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         hideControlView();
       }
     });
-  }
 
-  //  private CountDownTimer mTimer = new CountDownTimer(200, 200) {
-  //    @Override
-  //    public void onTick(long millisUntilFinished) {
-  //
-  //    }
-  //
-  //    @Override
-  //    public void onFinish() {
-  //      final View decorView = getActivity().getWindow().getDecorView();
-  //      // Hide both the navigation bar and the status bar.
-  //      // SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
-  //      // a general rule, you should design your app to hide the status bar whenever you
-  //      // hide the navigation bar.
-  //      int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-  //      decorView.setSystemUiVisibility(uiOptions);
-  //      if (!needStop) {
-  //        mTimer.start();
-  //      }
-  //    }
-  //  };
-  //
-  //  private boolean needStop = false;
+    ViewTreeObserver vto = mRootView.getViewTreeObserver();
+    vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+      @Override
+      public void onGlobalLayout() {
+        ViewTreeObserver obs = mRootView.getViewTreeObserver();
+        obs.removeOnGlobalLayoutListener(this);
+
+        BitmapHelper.loadImageIntoView(getResources(), R.drawable.remote_guide, mGuideImage);
+        BitmapHelper.loadImageIntoView(getResources(), R.drawable.more, moreBtn);
+        BitmapHelper.loadImageIntoView(getResources(), R.drawable.mode2d3d, mode2d3d);
+        BitmapHelper.loadImageIntoView(getResources(), R.drawable.scan, scan);
+        BitmapHelper.loadImageIntoView(getResources(), R.drawable.settings, settings);
+
+        if (!Application.getSettingsPreferences().contains(Application.FIRST_TIME_KEY)) {
+          mGuideImage.setVisibility(View.VISIBLE);
+          mOnSettingUp = true;
+          Application.getSettingsPreferences().edit().putBoolean(Application.FIRST_TIME_KEY, false).apply();
+        } else {
+          mOnSettingUp = false;
+          mGuideImage.setVisibility(View.GONE);
+        }
+
+        hideControlView();
+      }
+    });
+  }
 
   @Override
   public void onStart() {
     super.onStart();
     // If BT is not on, request that it be enabled.
-    // setupChat() will then be called during onActivityResult
     if (!adapter.isEnabled()) {
-      Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-      startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+      requestEnableBT();
     } else {
       tryToReconnectLastDevice();
     }
@@ -155,24 +168,15 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   public void onResume() {
     super.onResume();
     hideControlView();
-    //    needStop = false;
-    //    mTimer.start();
   }
-
-  //  @Override
-  //  public void onPause() {
-  //    needStop = true;
-  //    mTimer.cancel();
-  //    super.onPause();
-  //  }
 
   @Override
   public void onDestroy() {
     if (adapter.isDiscovering()) {
       adapter.cancelDiscovery();
     }
-    getActivity().unregisterReceiver(mBluetoothReceiver);
     getActivity().unregisterReceiver(mUSBReceiver);
+    getActivity().unregisterReceiver(mBluetoothReceiver);
     super.onDestroy();
   }
 
@@ -189,10 +193,12 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         break;
 
       case REQUEST_ENABLE_BT:
+        isRequesting = false;
         // When the request to enable Bluetooth returns
-        if (resultCode == Activity.RESULT_OK && !Application.getSocketClient().isConnected()) {
-          // Bluetooth is now enabled, so set up a chat session
-          discoverInAiR();
+        if (resultCode == Activity.RESULT_OK) {
+          if (mOnSettingUp) {
+            quickScanAndConnect();
+          }
         } else {
           isDiscovering = false;
           // User did not enable Bluetooth or an error occurred
@@ -200,6 +206,15 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
           Toast.makeText(getActivity(), "Bluetooth not enabled", Toast.LENGTH_SHORT).show();
         }
     }
+  }
+
+  public boolean onBackPressed() {
+    if (mGuideImage.getVisibility() == View.VISIBLE) {
+      mGuideImage.setVisibility(View.GONE);
+      mOnSettingUp = false;
+      return true;
+    }
+    return false;
   }
   //endregion
 
@@ -225,7 +240,8 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   private void handleScanDevices() {
-    Toast.makeText(getActivity(), "Not implemented yet", Toast.LENGTH_SHORT).show();
+    mOnSettingUp = false;
+    discoverInAiR();
   }
 
   private void switchDisplayMode() {
@@ -233,38 +249,97 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   private void settingDevice() {
-    Toast.makeText(getActivity(), "Not implemented yet", Toast.LENGTH_SHORT).show();
+    Application.getSocketClient().disconnect();
+    if (adapter.isDiscovering()) {
+      adapter.cancelDiscovery();
+    }
+    setState(STATE_NONE);
+    mOnSettingUp = true;
+    mIsPC = false;
+    mGuideImage.setVisibility(View.VISIBLE);
+
+    if (!adapter.isEnabled()) {
+      requestEnableBT();
+    }
   }
   //endregion
 
-  private void setupListener() {
-    IntentFilter filter = new IntentFilter();
-    filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-    getActivity().registerReceiver(mUSBReceiver, filter);
+  static final int STATE_NONE = 0;
+  static final int STATE_SCANNING = 1;
+  static final int STATE_CONNECTING = 2;
+  static final int STATE_CONNECTED = 3;
+
+  private int mState;
+
+  private void setState(int state) {
+    mState = state;
   }
 
+  private boolean mOnSettingUp = false;
+
+  private void setupListener() {
+    setState(STATE_NONE);
+
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(Intent.ACTION_POWER_CONNECTED);
+    filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+    filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+
+    getActivity().registerReceiver(mUSBReceiver, filter);
+
+    // Register for broadcasts when a device is discovered
+    filter = new IntentFilter();
+    filter.addAction(BluetoothDevice.ACTION_FOUND);
+    filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+    getActivity().registerReceiver(mBluetoothReceiver, filter);
+  }
+
+  private boolean mUSBConnected = false;
+  private boolean mIsPC = false;
   private final BroadcastReceiver mUSBReceiver = new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent) {
       String action = intent.getAction();
       switch (action) {
-        case Intent.ACTION_BATTERY_CHANGED:
-          boolean isPC = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == BatteryManager.BATTERY_PLUGGED_USB;
-          if (isPC && !Application.getSocketClient().isConnected()) {
-            Toast.makeText(getActivity(), "Battery changed " + isPC, Toast.LENGTH_SHORT).show();
-            quickScanAndConnect();
+        case Intent.ACTION_POWER_CONNECTED: {
+          mUSBConnected = true;
+          Toast.makeText(getActivity(), "USB Connected", Toast.LENGTH_SHORT).show();
+          quickScanAndConnect();
+          break;
+        }
+
+        case Intent.ACTION_POWER_DISCONNECTED:
+          mUSBConnected = false;
+          adapter.cancelDiscovery();
+          if (mOnSettingUp) {
+            Toast.makeText(getActivity(), "Please connect this phone to inAiR device", Toast.LENGTH_LONG).show();
           }
           break;
+
+        case Intent.ACTION_BATTERY_CHANGED: {
+          mIsPC = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == BatteryManager.BATTERY_PLUGGED_USB;
+          quickScanAndConnect();
+          break;
+        }
       }
     }
   };
 
+  private boolean isRequesting = false;
+  private void requestEnableBT() {
+    if (isRequesting) {
+      return;
+    }
+    Intent i = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+    startActivityForResult(i, REQUEST_ENABLE_BT);
+  }
+
   private void quickScanAndConnect() {
-    // Register for broadcasts when a device is discovered
-    IntentFilter filter = new IntentFilter();
-    filter.addAction(BluetoothDevice.ACTION_FOUND);
-    filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-    getActivity().registerReceiver(mBluetoothReceiver, filter);
+    if (!mIsPC || !mUSBConnected || !adapter.isEnabled()) {
+      return;
+    }
+
+    setState(STATE_SCANNING);
     adapter.startDiscovery();
   }
 
@@ -275,6 +350,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   private final BroadcastReceiver mBluetoothReceiver = new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent) {
+      if (!mOnSettingUp) {
+        return;
+      }
       String action = intent.getAction();
 
       // When discovery finds a device
@@ -285,20 +363,20 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
           if (device.getName() == null) {
             return;
           }
-          System.out.println(device.getName() + " " + Arrays.toString(device.getUuids()));
-          Toast.makeText(getActivity(), "Found " + device.getName(), Toast.LENGTH_SHORT).show();
           boolean hasInAiR = BTAdapter.getInstance().checkIfInAiR(device.getUuids());
           boolean potentialInAiR = "inAiR".equals(device.getName());
-          if ((hasInAiR || potentialInAiR)) {
+          if (hasInAiR || potentialInAiR) {
             adapter.cancelDiscovery();
-            Toast.makeText(getActivity(), "Connecting " + device.getName() + " " + device.getAddress(), Toast.LENGTH_SHORT)
-                .show();
+//            Toast.makeText(getActivity(), "Connecting " + device.getAddress(), Toast.LENGTH_SHORT).show();
+            setState(STATE_CONNECTING);
             Application.getSocketClient().connectTo(device.getAddress());
           }
           break;
         }
         case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-          System.out.println("FINISH");
+          if (mState < STATE_CONNECTING) {
+            Toast.makeText(getActivity(), "Have no inAiR around ", Toast.LENGTH_SHORT).show();
+          }
           break;
       }
     }
@@ -315,11 +393,13 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   private void discoverInAiR() {
     if (!adapter.isDiscovering() && !isDiscovering) {
-      //      isDiscovering = true;
-      //      System.out.println("MainActivity.discoverInAiR");
-      //      Intent i = new Intent(getActivity(), DeviceListActivity.class);
-      //      i.putExtra(DeviceListActivity.EXTRA_QUICK_CONNECT, true);
-      //      startActivityForResult(i, REQUEST_CONNECT_DEVICE_SECURE);
+      isDiscovering = true;
+      if (mOnSettingUp) {
+        adapter.startDiscovery();
+      } else {
+        Intent i = new Intent(getActivity(), DeviceListActivity.class);
+        startActivityForResult(i, REQUEST_CONNECT_DEVICE_SECURE);
+      }
     }
   }
   //endregion
@@ -350,17 +430,21 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   public void onStateChanged(boolean connect, String message) {
     System.out.println("MainFragment.onStateChanged " + connect + " " + message);
     if (!connect) {
-      if (!adapter.isEnabled()) {
-        Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-      } else if (!isDiscovering) {
-        tryToReconnectLastDevice();
+      if (mOnSettingUp) {
+        mOnSettingUp = false;
+        Toast.makeText(getActivity(), "Please try again" + message, Toast.LENGTH_SHORT).show();
       }
     } else {
-      Toast.makeText(getActivity(), "Connected " + message, Toast.LENGTH_SHORT).show();
-
-//      Intent i = new Intent(getActivity(), WifiListActivity.class);
-//      startActivity(i);
+      if (getActivity() != null) {
+        Toast.makeText(getActivity(), "Connected " + message, Toast.LENGTH_SHORT).show();
+        mGuideImage.setVisibility(View.GONE);
+        setState(STATE_CONNECTED);
+        if (mOnSettingUp) {
+          mOnSettingUp = false;
+          Intent i = new Intent(getActivity(), WifiListActivity.class);
+          startActivity(i);
+        }
+      }
     }
   }
 

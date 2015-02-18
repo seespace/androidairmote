@@ -27,8 +27,9 @@
         android:layout_height="20dp"
         android:layout_gravity="right"
         android:onClick="onMoreBtnClicked"
-        android:src="@drawable/more"
-        android:background="@drawable/btn_state" android:padding="0dp" android:id="@+id/moreBtn"/>
+        android:background="@drawable/btn_state"
+        android:padding="0dp"
+        android:id="@+id/moreBtn"/>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -43,13 +44,15 @@
         <ImageView
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_gravity="center_horizontal" android:src="@drawable/mode2d3d"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="Display"
-            android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>
+            android:id="@+id/mode2d3d"
+            />
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:text="Display"-->
+            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
 
       </LinearLayout>
 
@@ -62,13 +65,15 @@
         <ImageView
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_gravity="center_horizontal" android:src="@drawable/scan"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="Scan"
-            android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>
+            android:id="@+id/scan"
+            />
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:text="Scan"-->
+            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
 
       </LinearLayout>
 
@@ -81,17 +86,26 @@
         <ImageView
             android:layout_width="30dp"
             android:layout_height="30dp"
-            android:layout_gravity="center_horizontal" android:src="@drawable/settings"/>
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="Setup"
-            android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>
+            android:id="@+id/settings"/>
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:text="Setup"-->
+            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
 
       </LinearLayout>
 
     </LinearLayout>
   </LinearLayout>
+
+  <ImageView
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:id="@+id/imageView"
+      android:visibility="invisible"
+      android:scaleType="fitXY"
+      android:clickable="true"/>
 
 </RelativeLayout>
