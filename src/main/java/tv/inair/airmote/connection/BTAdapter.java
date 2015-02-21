@@ -146,6 +146,14 @@ public class BTAdapter {
     Log.d(TAG, "stop");
 
     if (mConnectThread != null) {
+      mConnectThread.interrupt();
+    }
+
+    if (mConnectedThread != null) {
+      mConnectedThread.interrupt();
+    }
+
+    if (mConnectThread != null) {
       mConnectThread.cancel();
       mConnectThread = null;
     }
@@ -252,7 +260,9 @@ public class BTAdapter {
     }
 
     public void cancel() {
+      while (!isInterrupted()) {}
       try {
+        System.out.println("ConnectThread.cancel");
         mmSocket.close();
       } catch (IOException e) {
         Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
@@ -295,7 +305,7 @@ public class BTAdapter {
       int length;
 
       // Keep listening to the InputStream while connected
-      while (true) {
+      while (!isInterrupted()) {
         try {
           if (mDataIS.available() > 0) {
             length = mDataIS.readInt();
@@ -327,7 +337,9 @@ public class BTAdapter {
     }
 
     public void cancel() {
+      while (!isInterrupted()) {}
       try {
+        System.out.println("ConnectedThread.cancel");
         mmSocket.close();
       } catch (IOException e) {
         Log.e(TAG, "close() of connect socket failed", e);

@@ -41,7 +41,9 @@ public class MainActivity extends FragmentActivity {
 
     if (savedInstanceState == null) {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-      fragment = new MainFragment();
+      if (fragment == null) {
+        fragment = new MainFragment();
+      }
       transaction.replace(R.id.fragment, fragment);
       transaction.commit();
     }

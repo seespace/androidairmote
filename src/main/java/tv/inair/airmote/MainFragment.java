@@ -407,6 +407,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   //region Implement
   @Override
   public void onEventReceived(Proto.Event event) {
+    if (!isAdded()) {
+      return;
+    }
     if (event != null && event.type != null) {
       switch (event.type) {
         case Proto.Event.OAUTH_REQUEST:
@@ -428,6 +431,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onStateChanged(boolean connect, String message) {
+    if (!isAdded()) {
+      return;
+    }
     System.out.println("MainFragment.onStateChanged " + connect + " " + message);
     if (!connect) {
       if (mOnSettingUp) {

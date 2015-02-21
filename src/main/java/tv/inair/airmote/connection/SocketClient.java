@@ -134,7 +134,7 @@ public class SocketClient {
     mBtAdapter.write(data);
   }
 
-  private void onEventReceived(Proto.Event e) {
+  private synchronized void onEventReceived(Proto.Event e) {
     Iterator<WeakReference<OnEventReceived>> it = mEventReceiveds.iterator();
     while (it.hasNext()) {
       WeakReference<OnEventReceived> l = it.next();
@@ -146,7 +146,7 @@ public class SocketClient {
     }
   }
 
-  private void onStateChanged(boolean connect, String message) {
+  private synchronized void onStateChanged(boolean connect, String message) {
     Iterator<WeakReference<OnSocketStateChanged>> it = mStateChangeds.iterator();
     while (it.hasNext()) {
       WeakReference<OnSocketStateChanged> l = it.next();

@@ -1,12 +1,12 @@
 package tv.inair.airmote;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.Window;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -26,31 +26,35 @@ public class WebviewActivity extends Activity {
   private String url;
   private String replyTo;
 
-  private ProgressDialog progress;
-
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
-    progress = ProgressDialog.show(this, "", "Loading...", true);
-
-    setContentView(R.layout.activity_webview);
 
     Intent i = getIntent();
     url = i.getStringExtra(EXTRA_URL);
     replyTo = i.getStringExtra(EXTRA_REPLY_TO);
 
-    webView = ((WebView) findViewById(R.id.webView));
-    webView.setWebViewClient(new Client());
+    getWindow().requestFeature(Window.FEATURE_PROGRESS);
+
+    webView = new WebView(this);
+    setContentView(webView);
+
     webView.getSettings().setJavaScriptEnabled(true);
+
+    webView.setWebChromeClient(new WebChromeClient() {
+      public void onProgressChanged(WebView view, int progress) {
+        // Activities and WebViews measure progress with different scales.
+        // The progress meter will automatically disappear when we reach 100%
+        WebviewActivity.this.setProgress(progress * 1000);
+      }
+    });
+
+    webView.setWebViewClient(new Client());
     webView.loadUrl(url);
   }
 
   private void dismissActivity() {
-    if (progress.isShowing()) {
-      progress.dismiss();
-    }
-    webView.clearHistory(); // clear history
+    webView.destroy();
     finish(); // finish activity
   }
 
@@ -64,19 +68,9 @@ public class WebviewActivity extends Activity {
   }
 
   private class Client extends WebViewClient {
-    @Override
-    public void onPageStarted(WebView view, String url, Bitmap favicon) {
-      super.onPageStarted(view, url, favicon);
-      if (!progress.isShowing()) {
-        progress.show();
-      }
-    }
 
     @Override
     public void onPageFinished(WebView view, String url) {
-      if (progress.isShowing()) {
-        progress.dismiss();
-      }
       Uri uri = Uri.parse(url);
       if (OAUTH_SERVER.equalsIgnoreCase(uri.getHost())) {
         String code = null;

@@ -37,7 +37,7 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
 
     Intent i = getIntent();
     ssid = i.getStringExtra(EXTRA_SSID);
-    setTitle("Connect to " + ssid);
+    setTitle("Connect to WIFI");
 
     setContentView(R.layout.activity_connect);
 

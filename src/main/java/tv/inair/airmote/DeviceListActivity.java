@@ -74,10 +74,8 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
     Intent i = getIntent();
     isQuickConnect = i.getBooleanExtra(EXTRA_QUICK_CONNECT, false);
 
-    if (isQuickConnect) {
-      progress = ProgressDialog.show(this, "", "Loading...", true);
-      setVisible(false);
-    }
+    progress = ProgressDialog.show(this, "", "Loading...", true);
+    setVisible(false);
 
     // Register for broadcasts when a device is discovered
     IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
