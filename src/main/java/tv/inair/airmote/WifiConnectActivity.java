@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import tv.inair.airmote.connection.OnEventReceived;
@@ -32,16 +33,17 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
     super.onCreate(savedInstanceState);
 
     Application.getSocketClient().addEventReceivedListener(this);
-
     setResult(Activity.RESULT_CANCELED);
+
+    setTitle("Connect to WIFI");
+    setContentView(R.layout.activity_connect);
 
     Intent i = getIntent();
     ssid = i.getStringExtra(EXTRA_SSID);
-    setTitle("Connect to WIFI");
-
-    setContentView(R.layout.activity_connect);
 
     passwordView = ((EditText) findViewById(R.id.editText));
+    TextView des = ((TextView) findViewById(R.id.description));
+    des.setText(getResources().getString(R.string.connectDesTxt) + " " + ssid);
   }
 
   @Override

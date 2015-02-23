@@ -33,11 +33,11 @@ public class SocketClient {
                   .putString(DISPLAY_NAME_KEY, mDisplayName)
                   .commit();
 
-              Application.getSettingsPreferences()
-                  .edit()
-                  .putString(HOST_NAME_KEY, mHostName)
-                  .putString(DISPLAY_NAME_KEY, mDisplayName)
-                  .commit();
+//              Application.getSettingsPreferences()
+//                  .edit()
+//                  .putString(HOST_NAME_KEY, mHostName)
+//                  .putString(DISPLAY_NAME_KEY, mDisplayName)
+//                  .commit();
 
               onStateChanged(true, mDisplayName);
               break;
@@ -81,6 +81,21 @@ public class SocketClient {
   public void addSocketStateChangedListener(OnSocketStateChanged listener) {
     mStateChangeds.add(new WeakReference<>(listener));
   }
+
+//  public void removeEventReceivedListener(OnEventReceived listener) {
+//    Iterator<WeakReference<OnEventReceived>> it = mEventReceiveds.iterator();
+//    while (it.hasNext()) {
+//      WeakReference<OnEventReceived> l = it.next();
+//      if (l.get() == listener) {
+//        it.remove();
+//        return;
+//      }
+//    }
+//  }
+//
+//  public void removeSocketStateChangedListener(OnSocketStateChanged listener) {
+//    mStateChangeds.add(new WeakReference<>(listener));
+//  }
 
   public boolean isConnected() {
     return mBtAdapter.isConnected();

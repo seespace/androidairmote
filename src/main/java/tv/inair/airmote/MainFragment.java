@@ -137,6 +137,8 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         BitmapHelper.loadImageIntoView(getResources(), R.drawable.scan, scan);
         BitmapHelper.loadImageIntoView(getResources(), R.drawable.settings, settings);
 
+        System.out.println("MainFragment " + MainFragment.this);
+
         if (!Application.getSettingsPreferences().contains(Application.FIRST_TIME_KEY)) {
           mGuideImage.setVisibility(View.VISIBLE);
           mOnSettingUp = true;
@@ -177,6 +179,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     }
     getActivity().unregisterReceiver(mUSBReceiver);
     getActivity().unregisterReceiver(mBluetoothReceiver);
+
     super.onDestroy();
   }
 
@@ -443,6 +446,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     } else {
       if (getActivity() != null) {
         Toast.makeText(getActivity(), "Connected " + message, Toast.LENGTH_SHORT).show();
+
         mGuideImage.setVisibility(View.GONE);
         setState(STATE_CONNECTED);
         if (mOnSettingUp) {

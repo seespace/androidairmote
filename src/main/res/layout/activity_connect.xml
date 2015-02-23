@@ -16,8 +16,7 @@
           android:layout_height="wrap_content"
           android:layout_gravity="center"
           android:layout_weight="1"
-          android:text="Password"
-          android:textAlignment="center"
+          android:text="@string/pwdTxt"
           android:textAppearance="?android:attr/textAppearanceLarge"
           />
       <EditText
@@ -30,12 +29,26 @@
           android:inputType="textPassword"
           />
     </TableRow>
+
+    <TableRow
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:layout_weight="1"
+          android:textAppearance="?android:attr/textAppearanceLarge"
+          android:layout_margin="5dp"
+          android:id="@+id/description"
+          />
+    </TableRow>
   </TableLayout>
   <Button
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:layout_margin="5dp"
-      android:text="Connect"
+      android:text="@string/connectTxt"
       android:textAppearance="?android:attr/textAppearanceLarge"
       android:layout_gravity="center"
       android:onClick="onConnectButtonClicked"
