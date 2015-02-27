@@ -1,6 +1,4 @@
-package tv.inair.airmote;
-
-import inair.eventcenter.proto.Proto;
+package tv.inair.airmote.connection;
 
 /**
  * <p>
@@ -11,6 +9,6 @@ import inair.eventcenter.proto.Proto;
  * <p/>
  * <p>Copyright (c) 2014 SeeSpace.co. All rights reserved.</p>
  */
-public interface OnEventReceived {
-  public void onEventReceived(Proto.Event event);
+public interface OnSocketStateChanged {
+  public void onStateChanged(boolean connect, String message);
 }

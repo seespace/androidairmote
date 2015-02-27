@@ -1,0 +1,5 @@
+<resources>
+    <color name="btn_pressed">#ff969696</color>
+    <color name="btn_focused">#ff969696</color>
+    <color name="btn_normal">@android:color/transparent</color>
+</resources>

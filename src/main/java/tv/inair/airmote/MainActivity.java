@@ -26,101 +26,33 @@
 
 package tv.inair.airmote;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
-import android.text.InputType;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 
-import inair.eventcenter.proto.Proto;
+public class MainActivity extends FragmentActivity {
 
-public class MainActivity extends Activity implements OnEventReceived, OnSocketStateChanged {
-
-  private GestureControl mGestureControl;
+  MainFragment fragment;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    mGestureControl = new GestureControl(this, findViewById(R.id.rootView));
-
-    Airmote.getSocketClient().setOnEventReceived(this);
-    Airmote.getSocketClient().setOnSocketStateChanged(this);
-
-    if (Airmote.getSocketClient().isConnected()) {
-      Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-    }
-  }
-
-  @Override
-  public void onEventReceived(Proto.Event event) {
-  }
-
-  Dialog mDialog;
-  @Override
-  public void onStateChanged(boolean connect, String message) {
-    if (!connect) {
-      if (mDialog == null) {
-        // Set up the input
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        input.setHint("inair.local or 127.0.0.1");
-
-        mDialog = new AlertDialog.Builder(this)
-            .setTitle("Connect to inAiR")
-            .setView(input)
-            .setPositiveButton("Connect", new DialogInterface.OnClickListener() {
-              @Override
-              public void onClick(DialogInterface dialogInterface, int i) {
-                CharSequence hostname = input.getText();
-                if (hostname.length() > 0) {
-                  Airmote.getSocketClient().connectTo(hostname.toString());
-                }
-              }
-            })
-            .create();
-
-        mDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-          @Override
-          public void onCancel(DialogInterface dialog) {
-            mDialog = null;
-          }
-        });
-
-        mDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-          @Override
-          public void onDismiss(DialogInterface dialog) {
-            if (input.getText().length() <= 0) {
-              mDialog.show();
-            } else {
-              mDialog = null;
-            }
-          }
-        });
-
-        mDialog.show();
-
+    if (savedInstanceState == null) {
+      FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+      if (fragment == null) {
+        fragment = new MainFragment();
       }
-    } else {
-      Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+      transaction.replace(R.id.fragment, fragment);
+      transaction.commit();
     }
   }
 
   @Override
-  protected void onStart() {
-    super.onStart();
-    if (!Airmote.getSocketClient().isConnected()) {
-      Airmote.getSocketClient().reconnectToLastHost();
+  public void onBackPressed() {
+    if (!fragment.onBackPressed()) {
+      super.onBackPressed();
     }
-  }
-
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
-    Airmote.getSocketClient().disconnect();
   }
 }

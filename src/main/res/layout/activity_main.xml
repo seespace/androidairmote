@@ -1,17 +1,9 @@
-<RelativeLayout
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ffe6e6e6"
-    android:id="@+id/rootView"
     tools:context=".MainActivity"
-    >
-
-  <View
-      android:layout_width="1dp"
-      android:layout_height="match_parent"
-      android:layout_centerHorizontal="true"
-      android:background="@drawable/rectangle"/>
-
-</RelativeLayout>
+    />

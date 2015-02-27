@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:id="@+id/rootView"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffe6e6e6"
+    >
+
+  <View
+      android:layout_width="1dp"
+      android:layout_height="match_parent"
+      android:layout_centerHorizontal="true"
+      android:background="@drawable/rectangle"/>
+  <LinearLayout
+      android:id="@+id/controlView"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
+      android:layout_centerHorizontal="true"
+      android:background="@android:color/white"
+      android:orientation="vertical"
+      >
+    <ImageView
+        style="@style/Button"
+        android:layout_width="45dp"
+        android:layout_height="20dp"
+        android:layout_gravity="right"
+        android:onClick="onMoreBtnClicked"
+        android:background="@drawable/btn_state"
+        android:padding="0dp"
+        android:id="@+id/moreBtn"/>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" android:id="@+id/controlContainer">
+
+      <LinearLayout
+          style="@style/Button"
+          android:id="@+id/threeDBtn"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/mode2d3d"
+            />
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:text="Display"-->
+            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
+
+      </LinearLayout>
+
+      <LinearLayout
+          style="@style/Button"
+          android:id="@+id/scanBtn"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/scan"
+            />
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:text="Scan"-->
+            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
+
+      </LinearLayout>
+
+      <LinearLayout
+          style="@style/Button"
+          android:id="@+id/settingBtn"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/settings"/>
+        <!--<TextView-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_gravity="center_horizontal"-->
+            <!--android:text="Setup"-->
+            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
+
+      </LinearLayout>
+
+    </LinearLayout>
+  </LinearLayout>
+
+  <ImageView
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:id="@+id/imageView"
+      android:visibility="invisible"
+      android:scaleType="fitXY"
+      android:clickable="true"/>
+
+</RelativeLayout>
