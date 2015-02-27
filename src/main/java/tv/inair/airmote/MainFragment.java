@@ -267,6 +267,43 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
   //endregion
 
+  public static final String ACTION_USB_STATE = "android.hardware.usb.action.USB_STATE";
+  /**
+   * Boolean extra indicating whether USB is connected or disconnected.
+   * Used in extras for the {@link #ACTION_USB_STATE} broadcast.
+   *
+   * {@hide}
+   */
+  public static final String USB_CONNECTED = "connected";
+  /**
+   * Boolean extra indicating whether USB is configured.
+   * Used in extras for the {@link #ACTION_USB_STATE} broadcast.
+   *
+   * {@hide}
+   */
+  public static final String USB_CONFIGURED = "configured";
+  /**
+   * Name of the USB mass storage USB function.
+   * Used in extras for the {@link #ACTION_USB_STATE} broadcast
+   *
+   * {@hide}
+   */
+  public static final String USB_FUNCTION_MASS_STORAGE = "mass_storage";
+  /**
+   * Name of the adb USB function.
+   * Used in extras for the {@link #ACTION_USB_STATE} broadcast
+   *
+   * {@hide}
+   */
+  public static final String USB_FUNCTION_ADB = "adb";
+  /**
+   * Name of the MTP USB function.
+   * Used in extras for the {@link #ACTION_USB_STATE} broadcast
+   *
+   * {@hide}
+   */
+  public static final String USB_FUNCTION_MTP = "mtp";
+
   static final int STATE_NONE = 0;
   static final int STATE_SCANNING = 1;
   static final int STATE_CONNECTING = 2;
@@ -287,6 +324,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     filter.addAction(Intent.ACTION_POWER_CONNECTED);
     filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
     filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+    filter.addAction(ACTION_USB_STATE);
 
     getActivity().registerReceiver(mUSBReceiver, filter);
 
@@ -323,6 +361,17 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
           mIsPC = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == BatteryManager.BATTERY_PLUGGED_USB;
           quickScanAndConnect();
           break;
+        }
+
+        case ACTION_USB_STATE: {
+          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
+          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
+          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
+          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
+          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
+          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
+          Toast.makeText(getActivity(), des, Toast.LENGTH_LONG).show();
+          System.out.println(des);
         }
       }
     }
