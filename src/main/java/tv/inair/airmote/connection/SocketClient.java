@@ -9,9 +9,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.Application;
 import tv.inair.airmote.remote.Helper;
-import tv.inair.airmote.remote.Proto;
 
 public class SocketClient {
   private static final String HOST_NAME_KEY = "#hostname";

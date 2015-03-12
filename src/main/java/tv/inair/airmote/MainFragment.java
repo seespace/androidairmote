@@ -19,11 +19,11 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.BTAdapter;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.OnSocketStateChanged;
 import tv.inair.airmote.remote.GestureControl;
-import tv.inair.airmote.remote.Proto;
 import tv.inair.airmote.utils.BitmapHelper;
 
 /**

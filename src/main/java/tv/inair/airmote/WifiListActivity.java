@@ -14,9 +14,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.remote.Helper;
-import tv.inair.airmote.remote.Proto;
 
 /**
  * <p>

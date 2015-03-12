@@ -13,6 +13,8 @@ import com.google.protobuf.nano.MessageNano;
 
 import java.nio.ByteBuffer;
 
+import inair.eventcenter.proto.Proto;
+
 /**
  * Copyright (c) 2014 SeeSpace.co. All rights reserved.
  */
