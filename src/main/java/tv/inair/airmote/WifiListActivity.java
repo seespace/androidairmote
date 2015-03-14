@@ -16,6 +16,8 @@ import android.widget.Toast;
 
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
+import tv.inair.airmote.connection.OnSocketStateChanged;
+import tv.inair.airmote.connection.SocketClient;
 import tv.inair.airmote.remote.Helper;
 
 /**
@@ -27,7 +29,14 @@ import tv.inair.airmote.remote.Helper;
  * <p/>
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
-public class WifiListActivity extends Activity implements AdapterView.OnItemClickListener, OnEventReceived {
+public class WifiListActivity extends Activity implements AdapterView.OnItemClickListener, OnEventReceived, OnSocketStateChanged {
+
+  @Override
+  public void onStateChanged(boolean connect, String message) {
+    if (!connect) {
+      finishAffinity();
+    }
+  }
 
   private class RowItem {
     int signal;
@@ -68,18 +77,21 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
   }
 
   private WifiListAdapter adapter;
+  private SocketClient mClient;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    Application.getSocketClient().addEventReceivedListener(this);
+    mClient = Application.getSocketClient();
+    mClient.addEventReceivedListener(this);
+    mClient.addSocketStateChangedListener(this);
 
     adapter = new WifiListAdapter(this, R.layout.wifi_item);
     getWifiList();
     setContentView(R.layout.activity_list);
 
-    setTitle("Connect to Wifi");
+    setTitle("Choose a Network");
 
     // Find and set up the ListView for newly discovered devices
     ListView newDevicesListView = (ListView) findViewById(R.id.listview);

@@ -8,6 +8,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
+import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.Application;
 
 /**
