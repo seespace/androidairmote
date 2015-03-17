@@ -44,16 +44,19 @@ public class Application extends android.app.Application {
   private static final String TAG = "inAiR";
 
   public static void notify(Context context, String message) {
-    NotificationManager manager = ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE));
-    if (message == null) {
-      manager.cancel(0);
-    } else {
-      NotificationCompat.Builder builder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher)
-          .setLocalOnly(true)
-          .setPriority(Notification.PRIORITY_MAX)
-          .setContentTitle(TAG)
-          .setContentText(message);
-      manager.notify(0, builder.build());
+    if (context != null) {
+      NotificationManager manager = ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE));
+      if (message == null) {
+        manager.cancel(0);
+      } else {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher)
+            .setLocalOnly(true)
+            .setTicker(message)
+            .setPriority(Notification.PRIORITY_MAX)
+            .setContentTitle(TAG)
+            .setContentText(message);
+        manager.notify(0, builder.build());
+      }
     }
   }
 
