@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.List;
+
+import tv.inair.airmote.Application;
 
 /**
  * <p>
@@ -51,7 +54,8 @@ public final class WifiAdapter extends BaseConnection {
   public static WifiAdapter getInstance() {
     if (_instance == null) {
       _instance = new WifiAdapter();
-    } return _instance;
+    }
+    return _instance;
   }
 
   private WifiAdapter() {
@@ -61,9 +65,27 @@ public final class WifiAdapter extends BaseConnection {
   //endregion
 
   private void _connectToInAiR() {
+    if (!mManager.isWifiEnabled()) {
+      mManager.setWifiEnabled(true);
+    }
     int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
     mManager.disconnect();
-    mManager.enableNetwork(netId, true);
+    mManager.enableNetwork(netId, false);
+    mManager.reconnect();
+  }
+
+  private void _disableInAirNetwork() {
+    if (!mManager.isWifiEnabled()) {
+      mManager.setWifiEnabled(true);
+    }
+    mManager.disconnect();
+    List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
+    for (int i = 0; i < configs.size(); i++) {
+      WifiConfiguration config = configs.get(i);
+      if (_checkIfInAiR(config.SSID)) {
+        mManager.removeNetwork(config.networkId);
+      }
+    }
     mManager.reconnect();
   }
 
@@ -81,10 +103,18 @@ public final class WifiAdapter extends BaseConnection {
           NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
           if (networkInfo.isConnected()) {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-            System.out.println("Connected to " + wifiInfo.getSSID());
-            if (_checkIfInAiR(wifiInfo.getSSID())) {
-              connect(INAIR_DEVICE);
+            System.out.println("Connected " + wifiInfo.getSSID() + " " + Application.getSocketClient().isInSettingMode());
+            if (Application.getSocketClient().isInSettingMode()) {
+              if (_checkIfInAiR(wifiInfo.getSSID())) {
+                connect(INAIR_DEVICE);
+              } else {
+                _connectToInAiR();
+              }
+            } else {
+              _disableInAirNetwork();
             }
+          } else {
+            stop();
           }
           break;
 
@@ -117,21 +147,55 @@ public final class WifiAdapter extends BaseConnection {
     return true;
   }
 
+  public static void connectWifiTo(String ssid, String bssid, String capabilities, String password, boolean autoConnect) {
+    WifiConfiguration config = new WifiConfiguration();
+    config.SSID = "\"" + ssid + "\"";
+    config.BSSID = bssid;
+
+    if (capabilities.contains("PSK")) {
+      config.preSharedKey = "\"" + password + "\"";
+    } else if (capabilities.contains("WEP")) {
+      config.wepKeys[0] = "\"" + password + "\"";
+      config.wepTxKeyIndex = 0;
+      config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+      config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
+    } else {
+      config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+    }
+
+    WifiAdapter ins = getInstance();
+
+    if (!ins.mManager.isWifiEnabled()) {
+      ins.mManager.setWifiEnabled(true);
+    }
+    int netId = ins.mManager.addNetwork(config);
+    ins.mManager.disconnect();
+    getInstance().mManager.enableNetwork(netId, false);
+    getInstance().mManager.reconnect();
+  }
+
   @Override
   public synchronized boolean connect(Device device) {
     if (device == null) {
       return false;
     }
 
+    System.out.println("WifiAdapter.connect " + device);
+
     if (mConnectThread != null) {
-      mConnectThread.cancel(); mConnectThread = null;
+      mConnectThread.cancel();
+      mConnectThread = null;
     }
 
     if (mConnectedThread != null) {
-      mConnectedThread.cancel(); mConnectedThread = null;
+      mConnectedThread.cancel();
+      mConnectedThread = null;
     }
 
-    mConnectThread = new ConnectThread(device); mConnectThread.start(); setState(STATE_CONNECTING); return true;
+    mConnectThread = new ConnectThread(device);
+    mConnectThread.start();
+    setState(STATE_CONNECTING);
+    return true;
   }
 
   @Override
@@ -139,11 +203,13 @@ public final class WifiAdapter extends BaseConnection {
     Log.d(TAG, "Stop");
 
     if (mConnectThread != null) {
-      mConnectThread.cancel(); mConnectThread = null;
+      mConnectThread.cancel();
+      mConnectThread = null;
     }
 
     if (mConnectedThread != null) {
-      mConnectedThread.cancel(); mConnectedThread = null;
+      mConnectedThread.cancel();
+      mConnectedThread = null;
     }
 
     setState(STATE_NONE);
@@ -151,12 +217,13 @@ public final class WifiAdapter extends BaseConnection {
 
   @Override
   public void write(byte[] data) {
-    ConnectedThread r; synchronized (this) {
+    ConnectedThread r;
+    synchronized (this) {
       if (mState != STATE_CONNECTED) {
         return;
-      } r = mConnectedThread;
+      }
+      r = mConnectedThread;
     }
-
     r.write(data);
   }
   //endregion
@@ -166,20 +233,25 @@ public final class WifiAdapter extends BaseConnection {
 
     // Cancel the thread that completed the connection
     if (mConnectThread != null) {
-      mConnectThread.cancel(); mConnectThread = null;
+      mConnectThread.cancel();
+      mConnectThread = null;
     }
 
     // Cancel any thread currently running a connection
     if (mConnectedThread != null) {
-      mConnectedThread.cancel(); mConnectedThread = null;
+      mConnectedThread.cancel();
+      mConnectedThread = null;
     }
 
     // Start the thread to manage the connection and perform transmissions
-    mConnectedThread = new ConnectedThread(socket); mConnectedThread.start();
+    mConnectedThread = new ConnectedThread(socket);
+    mConnectedThread.start();
 
     // Send the name of the connected device back to the UI Activity
-    Message msg = mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_DEVICE_NAME); Bundle bundle = new Bundle();
-    bundle.putString(BaseConnection.Constants.DEVICE_NAME, device.deviceName); msg.setData(bundle);
+    Message msg = mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_DEVICE_NAME);
+    Bundle bundle = new Bundle();
+    bundle.putString(BaseConnection.Constants.DEVICE_NAME, device.deviceName);
+    msg.setData(bundle);
     mHandler.sendMessage(msg);
 
     setState(STATE_CONNECTED);
@@ -194,14 +266,18 @@ public final class WifiAdapter extends BaseConnection {
 
     @Override
     public void run() {
-      Log.i(TAG, "BEGIN ConnectThread " + mDevice.address); setName("ConnectThread");
+      Log.i(TAG, "BEGIN ConnectThread " + mDevice.address);
+      setName("ConnectThread");
 
       Socket socket;
 
       try {
-        socket = new Socket(InetAddress.getByName(mDevice.address), INAIR_PORT); socket.setTcpNoDelay(true);
+        socket = new Socket(InetAddress.getByName(mDevice.address), INAIR_PORT);
+        socket.setTcpNoDelay(true);
       } catch (IOException e) {
-        e.printStackTrace(); connectionFailed(); return;
+        e.printStackTrace();
+        connectionFailed();
+        return;
       }
 
       synchronized (WifiAdapter.this) {
@@ -212,7 +288,8 @@ public final class WifiAdapter extends BaseConnection {
     }
 
     public void cancel() {
-      interrupt(); Log.i(TAG, "CANCEL ConnectThread ");
+      interrupt();
+      Log.i(TAG, "CANCEL ConnectThread ");
     }
   }
 
@@ -222,7 +299,8 @@ public final class WifiAdapter extends BaseConnection {
     private DataOutputStream mDataOS;
 
     public ConnectedThread(Socket socket) {
-      Log.d(TAG, "CREATE ConnectedThread"); mmSocket = socket;
+      Log.d(TAG, "CREATE ConnectedThread");
+      mmSocket = socket;
 
       // Get the Socket input and output streams
       try {
@@ -235,23 +313,29 @@ public final class WifiAdapter extends BaseConnection {
 
     @Override
     public void run() {
-      Log.i(TAG, "BEGIN ConnectedThread"); byte[] buffer = new byte[4096]; int length;
+      Log.i(TAG, "BEGIN ConnectedThread");
+      byte[] buffer = new byte[4096];
+      int length;
 
       // Keep listening to the InputStream while connected
       while (!isInterrupted()) {
         try {
           if (mDataIS.available() > 0) {
-            length = mDataIS.readInt(); mDataIS.readFully(buffer, 0, length);
+            length = mDataIS.readInt();
+            mDataIS.readFully(buffer, 0, length);
 
             // Send the obtained bytes to the UI Activity
             mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_READ, length, -1, Arrays.copyOf(buffer, length))
                 .sendToTarget();
           }
         } catch (IOException e) {
-          Log.e(TAG, "DISCONNECTED", e); connectionLost(); break;
+          Log.e(TAG, "DISCONNECTED", e);
+          connectionLost();
+          break;
         }
-
       }
+
+      Log.e(TAG, "DISCONNECTED");
     }
 
     /**
@@ -264,12 +348,16 @@ public final class WifiAdapter extends BaseConnection {
         mDataOS.write(buffer);
       } catch (IOException e) {
         Log.e(TAG, "Exception during write", e);
+        connectionLost();
+        cancel();
       }
     }
 
     public void cancel() {
       try {
-        System.out.println("ConnectedThread.cancel"); mmSocket.close();
+        interrupt();
+        System.out.println("ConnectedThread.cancel");
+        mmSocket.close();
       } catch (IOException e) {
         Log.e(TAG, "close() of connect socket failed", e);
       }

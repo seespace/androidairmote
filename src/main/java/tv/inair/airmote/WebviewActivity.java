@@ -1,5 +1,6 @@
 package tv.inair.airmote;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -29,6 +30,11 @@ public class WebviewActivity extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    ActionBar actionBar = getActionBar();
+    if (actionBar != null) {
+      actionBar.setDisplayHomeAsUpEnabled(true);
+    }
 
     Intent i = getIntent();
     url = i.getStringExtra(EXTRA_URL);

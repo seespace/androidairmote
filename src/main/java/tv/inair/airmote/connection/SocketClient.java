@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -41,7 +40,8 @@ public final class SocketClient {
       switch (action) {
         case Intent.ACTION_POWER_CONNECTED: {
           mUSBConnected = true;
-          Toast.makeText(context, "USB Connected", Toast.LENGTH_SHORT).show();
+          Application.notify(context, "USB Connected");
+//          Toast.makeText(context, "USB Connected", Toast.LENGTH_SHORT).show();
           quickScanAndConnect();
           break;
         }
@@ -56,15 +56,15 @@ public final class SocketClient {
           break;
         }
 
-        case ACTION_USB_STATE: {
-          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
-          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
-          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
-          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
-          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
-          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
-          System.out.println(des);
-        }
+//        case ACTION_USB_STATE: {
+//          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
+//          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
+//          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
+//          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
+//          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
+//          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
+//          System.out.println(des);
+//        }
       }
     }
   };
@@ -75,11 +75,19 @@ public final class SocketClient {
     if (!mIsPC || !mUSBConnected || !mSettingUp) {
       return;
     }
+    Application.notify(fragment.get().getActivity(), "Connecting ...");
     mConnection.quickConnect();
   }
 
-  public void changeToSettingMode(boolean setup) {
+  public synchronized void changeToSettingMode(boolean setup) {
     mSettingUp = setup;
+    if (setup) {
+      mConnection.quickConnect();
+    }
+  }
+
+  public boolean isInSettingMode() {
+    return mSettingUp;
   }
 
   private WeakReference<Fragment> fragment;
@@ -91,7 +99,7 @@ public final class SocketClient {
     filter.addAction(Intent.ACTION_POWER_CONNECTED);
     filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
     filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-    filter.addAction(ACTION_USB_STATE);
+//    filter.addAction(ACTION_USB_STATE);
     context.getActivity().registerReceiver(receiver, filter);
 
     mConnection.register(context.getActivity());
@@ -134,17 +142,13 @@ public final class SocketClient {
 
   public boolean connectTo(BaseConnection.Device device) {
     Log.d(TAG, "ConnectTo " + device.address + " " + device.deviceName);
+    Application.notify(fragment.get().getActivity(), "Connecting ...");
     mDevice = device;
     return mConnection.connect(device);
   }
 
   public boolean isConnected() {
     return mConnection.isConnected();
-  }
-
-  private void notifyDisconnect(String message) {
-    disconnect();
-    onStateChanged(false, message);
   }
 
   public void disconnect() {
@@ -158,7 +162,6 @@ public final class SocketClient {
 
   public void sendEvent(Proto.Event e) {
     if (!isConnected()) {
-      notifyDisconnect(null);
       return;
     }
     byte[] data = Helper.dataFromEvent(e);
@@ -203,6 +206,26 @@ public final class SocketClient {
   }
   //endregion
 
+  private void handleStateChange(int state) {
+    switch (state) {
+      case BaseConnection.STATE_CONNECTED:
+        // BaseConnection.Device.saveToPref(Application.getTempPreferences(), mDevice);
+        // BaseConnection.Device.saveToPref(Application.getSettingsPreferences(), mDevice);
+        onStateChanged(true, mDevice.deviceName);
+        Application.notify(fragment.get().getActivity(), "Connected to " + mDevice.deviceName);
+        break;
+
+      case BaseConnection.STATE_NONE:
+        onStateChanged(false, mDevice.deviceName);
+        Application.notify(fragment.get().getActivity(), "Disconnected");
+        break;
+    }
+  }
+
+  private void updateDeviceName(String name) {
+    mDevice.deviceName = name;
+  }
+
   private static class LocalHandler extends Handler {
     WeakReference<SocketClient> mClient;
 
@@ -218,28 +241,16 @@ public final class SocketClient {
       }
       switch (msg.what) {
         case BaseConnection.Constants.MESSAGE_STATE_CHANGE:
-          switch (msg.arg1) {
-            case BTAdapter.STATE_CONNECTED:
-              System.out.println("SocketClient.handleMessage SAVED");
-              BaseConnection.Device.saveToPref(Application.getTempPreferences(), client.mDevice);
-              //              BaseConnection.Device.saveToPref(Application.getSettingsPreferences(), client.mDevice);
-              client.onStateChanged(true, client.mDevice.deviceName);
-              break;
-
-            case BTAdapter.STATE_NONE:
-              client.onStateChanged(false, client.mDevice.deviceName);
-              break;
-          }
+          client.handleStateChange(msg.arg1);
           break;
 
         case BaseConnection.Constants.MESSAGE_READ:
-          Proto.Event event = Helper.parseFrom((byte[]) msg.obj);
-          client.onEventReceived(event);
+          client.onEventReceived(Helper.parseFrom((byte[]) msg.obj));
           break;
 
         case BaseConnection.Constants.MESSAGE_DEVICE_NAME:
           // save the connected device's name
-          client.mDevice.deviceName = msg.getData().getString(BaseConnection.Constants.DEVICE_NAME);
+           client.updateDeviceName(msg.getData().getString(BaseConnection.Constants.DEVICE_NAME));
           break;
 
         default:

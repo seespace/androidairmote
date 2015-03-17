@@ -1,5 +1,6 @@
 package tv.inair.airmote;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -24,7 +25,8 @@ import tv.inair.airmote.remote.Helper;
  */
 public class WifiConnectActivity extends Activity implements OnEventReceived {
 
-  public static final String EXTRA_SSID = "extra_ssid";
+  public static final String EXTRA_SSID = "#wca_ssid";
+  public static final String EXTRA_PASSWORD = "#wca_password";
 
   private EditText passwordView;
   private String ssid;
@@ -35,9 +37,15 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    ActionBar actionBar = getActionBar();
+    if (actionBar != null) {
+      actionBar.setDisplayHomeAsUpEnabled(true);
+    }
+
+    setResult(Activity.RESULT_CANCELED);
+
     mClient = Application.getSocketClient();
     mClient.addEventReceivedListener(this);
-    setResult(Activity.RESULT_CANCELED);
 
     setTitle("Enter Password");
     setContentView(R.layout.activity_connect);
@@ -60,7 +68,10 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
           Toast.makeText(this, responseEvent.errorMessage, Toast.LENGTH_SHORT).show();
         } else {
           Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-          setResult(Activity.RESULT_OK);
+          Intent res = new Intent();
+          res.putExtra(EXTRA_SSID, ssid);
+          res.putExtra(EXTRA_PASSWORD, passwordView.getText().toString());
+          setResult(Activity.RESULT_OK, res);
           finish();
         }
       }

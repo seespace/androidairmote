@@ -15,6 +15,7 @@ import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.OnSocketStateChanged;
 import tv.inair.airmote.connection.SocketClient;
+import tv.inair.airmote.connection.WifiAdapter;
 import tv.inair.airmote.remote.GestureControl;
 import tv.inair.airmote.utils.BitmapHelper;
 
@@ -28,6 +29,9 @@ import tv.inair.airmote.utils.BitmapHelper;
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
 public class MainFragment extends Fragment implements OnEventReceived, OnSocketStateChanged, GestureControl.Listener {
+
+  public static final int REQUEST_WIFI_SETUP = 1;
+
   private GestureControl mGestureControl;
   private View mRootView;
   private View mControlView;
@@ -46,11 +50,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     mClient.addEventReceivedListener(this);
     mClient.addSocketStateChangedListener(this);
 
-    if (mClient.isConnected()) {
-      Toast.makeText(getActivity(), "Connected " + mClient.getDisplayName(), Toast.LENGTH_SHORT).show();
-    } else {
-      mClient.reconnectToLastDevice();
-    }
+//    if (!mClient.isConnected()) {
+//      mClient.reconnectToLastDevice();
+//    }
   }
 
   @Override
@@ -144,12 +146,27 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onDetach() {
-    mClient.unregister();
+    try {
+      mClient.unregister();
+    } catch (IllegalArgumentException ignore) {
+    }
     super.onDetach();
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    switch (requestCode) {
+      case REQUEST_WIFI_SETUP:
+        if (resultCode == Activity.RESULT_OK) {
+          String ssid = data.getStringExtra(WifiListActivity.EXTRA_SSID);
+          String bssid = data.getStringExtra(WifiListActivity.EXTRA_BSSID);
+          String capabilities = data.getStringExtra(WifiListActivity.EXTRA_CAPABILITIES);
+          String password = data.getStringExtra(WifiListActivity.EXTRA_PASSWORD);
+          System.out.println("MainFragment.onActivityResult " + ssid + " " + bssid + " " + capabilities + " " + password);
+          WifiAdapter.connectWifiTo(ssid, bssid, capabilities, password);
+        }
+        break;
+    }
   }
 
   public boolean onBackPressed() {
@@ -211,32 +228,34 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onEventReceived(Proto.Event event) {
+    if (!isVisible()) {
+      return;
+    }
     if (event != null && event.type != null) {
       switch (event.type) {
         case Proto.Event.OAUTH_REQUEST:
           processOAuth(event);
           break;
+
         case Proto.Event.TEXT_INPUT_REQUEST:
           processTextInput(event);
           break;
-
-        default:
-          System.out.println(event.type);
       }
     }
   }
 
   @Override
   public void onStateChanged(boolean connect, String message) {
+    if (!isVisible()) {
+      return;
+    }
     System.out.println("MainFragment.onStateChanged " + connect + " " + message);
     if (connect) {
-      if (getActivity() != null) {
-        Toast.makeText(getActivity(), "Connected " + message, Toast.LENGTH_SHORT).show();
-        mGuideImage.setVisibility(View.GONE);
-//        if (mSetting) {
-          Intent i = new Intent(getActivity(), WifiListActivity.class);
-          startActivity(i);
-        //        }
+      mGuideImage.setVisibility(View.GONE);
+      if (mClient.isInSettingMode()) {
+        System.out.println("Open WIFI");
+        Intent i = new Intent(getActivity(), WifiListActivity.class);
+        startActivityForResult(i, REQUEST_WIFI_SETUP);
       }
     }
   }

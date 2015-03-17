@@ -43,6 +43,7 @@ public class MainActivity extends FragmentActivity {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
       if (fragment == null) {
         fragment = new MainFragment();
+        fragment.setRetainInstance(true);
       }
       transaction.replace(R.id.fragment, fragment);
       transaction.commit();
@@ -54,5 +55,11 @@ public class MainActivity extends FragmentActivity {
     if (!fragment.onBackPressed()) {
       super.onBackPressed();
     }
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    Application.notify(this, null);
   }
 }
