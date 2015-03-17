@@ -48,6 +48,7 @@ public final class SocketClient {
 
         case Intent.ACTION_POWER_DISCONNECTED:
           mUSBConnected = false;
+          stopScanAndQuickConnect();
           break;
 
         case Intent.ACTION_BATTERY_CHANGED: {
@@ -76,13 +77,20 @@ public final class SocketClient {
       return;
     }
     Application.notify(fragment.get().getActivity(), "Connecting ...");
-    mConnection.quickConnect();
+    mConnection.startQuickConnect();
+  }
+
+  private void stopScanAndQuickConnect() {
+    Application.notify(fragment.get().getActivity(), "No device connect");
+    mConnection.stopQuickConnect();
   }
 
   public synchronized void changeToSettingMode(boolean setup) {
     mSettingUp = setup;
-    if (setup) {
-      mConnection.quickConnect();
+    if (!setup) {
+      stopScanAndQuickConnect();
+    } else {
+      mConnection.startQuickConnect();
     }
   }
 
@@ -123,6 +131,16 @@ public final class SocketClient {
   public SocketClient() {
     mConnection = WifiAdapter.getInstance();
     mConnection.setHandler(new LocalHandler(this));
+  }
+
+  public void startScanInAir(BaseConnection.DeviceFoundListener listener) {
+    mConnection.registerDeviceFoundListener(listener);
+    mConnection.startScan();
+  }
+
+  public void stopScanInAir() {
+    mConnection.registerDeviceFoundListener(null);
+    mConnection.stopScan();
   }
 
   public String getDisplayName() {

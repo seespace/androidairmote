@@ -31,6 +31,7 @@ import tv.inair.airmote.utils.BitmapHelper;
 public class MainFragment extends Fragment implements OnEventReceived, OnSocketStateChanged, GestureControl.Listener {
 
   public static final int REQUEST_WIFI_SETUP = 1;
+  public static final int REQUEST_SCAN_INAIR = 2;
 
   private GestureControl mGestureControl;
   private View mRootView;
@@ -113,11 +114,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         BitmapHelper.loadImageIntoView(getResources(), R.drawable.scan, scan);
         BitmapHelper.loadImageIntoView(getResources(), R.drawable.settings, settings);
 
-        System.out.println("MainFragment " + MainFragment.this);
-
         if (!Application.getSettingsPreferences().contains(Application.FIRST_TIME_KEY)) {
-          mGuideImage.setVisibility(View.VISIBLE);
           Application.getSettingsPreferences().edit().putBoolean(Application.FIRST_TIME_KEY, false).apply();
+          settingDevice();
         } else {
           mGuideImage.setVisibility(View.GONE);
         }
@@ -166,12 +165,19 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
           WifiAdapter.connectWifiTo(ssid, bssid, capabilities, password);
         }
         break;
+
+      case REQUEST_SCAN_INAIR:
+        if (resultCode == Activity.RESULT_OK) {
+          
+        }
+        break;
     }
   }
 
   public boolean onBackPressed() {
     if (mGuideImage.getVisibility() == View.VISIBLE) {
       mGuideImage.setVisibility(View.GONE);
+      mClient.changeToSettingMode(false);
       return true;
     }
     return false;
@@ -200,6 +206,8 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   private void handleScanDevices() {
+    Intent i = new Intent(getActivity(), DeviceListActivity.class);
+    startActivityForResult(i, REQUEST_SCAN_INAIR);
   }
 
   private void switchDisplayMode() {
@@ -249,11 +257,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     if (!isVisible()) {
       return;
     }
-    System.out.println("MainFragment.onStateChanged " + connect + " " + message);
     if (connect) {
       mGuideImage.setVisibility(View.GONE);
       if (mClient.isInSettingMode()) {
-        System.out.println("Open WIFI");
         Intent i = new Intent(getActivity(), WifiListActivity.class);
         startActivityForResult(i, REQUEST_WIFI_SETUP);
       }

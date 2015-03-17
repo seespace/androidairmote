@@ -123,8 +123,23 @@ public final class BTAdapter extends BaseConnection {
   }
 
   @Override
-  public boolean quickConnect() {
+  public boolean startQuickConnect() {
     return false;
+  }
+
+  @Override
+  public boolean stopQuickConnect() {
+    return false;
+  }
+
+  @Override
+  public void startScan() {
+
+  }
+
+  @Override
+  public void stopScan() {
+
   }
 
   @Override

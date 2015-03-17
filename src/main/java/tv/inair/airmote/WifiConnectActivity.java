@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
@@ -65,9 +64,9 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
       assert responseEvent != null;
       if (responseEvent.phase == Proto.REQUEST_WIFI_CONNECT) {
         if (responseEvent.error) {
-          Toast.makeText(this, responseEvent.errorMessage, Toast.LENGTH_SHORT).show();
+          Application.notify(this, responseEvent.errorMessage);
         } else {
-          Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+          System.out.println("WifiConnectActivity.onEventReceived connected");
           Intent res = new Intent();
           res.putExtra(EXTRA_SSID, ssid);
           res.putExtra(EXTRA_PASSWORD, passwordView.getText().toString());

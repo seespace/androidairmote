@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
+import android.net.nsd.NsdManager;
+import android.net.nsd.NsdServiceInfo;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
@@ -19,7 +21,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import tv.inair.airmote.Application;
 
@@ -36,18 +40,6 @@ public final class WifiAdapter extends BaseConnection {
 
   private static final String TAG = "WifiAdapter";
 
-  private static final WifiConfiguration INAIR_WIFI_CONFIG = new WifiConfiguration();
-  private static final String INAIR_SSID = String.format("\"%s\"", "InAir");
-  private static final String INAIR_PASSWORD = String.format("\"%s\"", "12345678");
-
-  private static final Device INAIR_DEVICE = new Device("inAiR", "192.168.49.1");
-  private static final int INAIR_PORT = 8989;
-
-  private ConnectThread mConnectThread;
-  private ConnectedThread mConnectedThread;
-
-  private WifiManager mManager;
-
   //region Singleton
   private static WifiAdapter _instance;
 
@@ -61,8 +53,25 @@ public final class WifiAdapter extends BaseConnection {
   private WifiAdapter() {
     INAIR_WIFI_CONFIG.SSID = INAIR_SSID;
     INAIR_WIFI_CONFIG.preSharedKey = INAIR_PASSWORD;
+
+    mNsdHelper = new NSDHelper();
   }
   //endregion
+
+  //region Wifi
+  private static final WifiConfiguration INAIR_WIFI_CONFIG = new WifiConfiguration();
+  private static final String INAIR_SSID = String.format("\"%s\"", "InAir");
+  private static final String INAIR_PASSWORD = String.format("\"%s\"", "12345678");
+
+  private static final Device INAIR_DEVICE = new Device("inAiR", "192.168.49.1");
+  private static final int INAIR_PORT = 8989;
+
+  private ConnectThread mConnectThread;
+  private ConnectedThread mConnectedThread;
+
+  private WifiManager mManager;
+
+  private NSDHelper mNsdHelper;
 
   private void _connectToInAiR() {
     if (!mManager.isWifiEnabled()) {
@@ -70,7 +79,7 @@ public final class WifiAdapter extends BaseConnection {
     }
     int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
     mManager.disconnect();
-    mManager.enableNetwork(netId, false);
+    mManager.enableNetwork(netId, true);
     mManager.reconnect();
   }
 
@@ -78,15 +87,15 @@ public final class WifiAdapter extends BaseConnection {
     if (!mManager.isWifiEnabled()) {
       mManager.setWifiEnabled(true);
     }
-    mManager.disconnect();
     List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
-    for (int i = 0; i < configs.size(); i++) {
-      WifiConfiguration config = configs.get(i);
-      if (_checkIfInAiR(config.SSID)) {
-        mManager.removeNetwork(config.networkId);
+    if (configs != null) {
+      for (int i = 0; i < configs.size(); i++) {
+        WifiConfiguration config = configs.get(i);
+        if (_checkIfInAiR(config.SSID)) {
+          mManager.removeNetwork(config.networkId);
+        }
       }
     }
-    mManager.reconnect();
   }
 
   private boolean _checkIfInAiR(String ssid) {
@@ -103,7 +112,6 @@ public final class WifiAdapter extends BaseConnection {
           NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
           if (networkInfo.isConnected()) {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-            System.out.println("Connected " + wifiInfo.getSSID() + " " + Application.getSocketClient().isInSettingMode());
             if (Application.getSocketClient().isInSettingMode()) {
               if (_checkIfInAiR(wifiInfo.getSSID())) {
                 connect(INAIR_DEVICE);
@@ -111,7 +119,7 @@ public final class WifiAdapter extends BaseConnection {
                 _connectToInAiR();
               }
             } else {
-              _disableInAirNetwork();
+              //mNsdHelper.startDiscover();
             }
           } else {
             stop();
@@ -126,10 +134,44 @@ public final class WifiAdapter extends BaseConnection {
     }
   };
 
+  private synchronized void connected(Socket socket, Device device) {
+    Log.d(TAG, "Connected " + device);
+
+    mNsdHelper.stopDiscover();
+
+    // Cancel the thread that completed the connection
+    if (mConnectThread != null) {
+      mConnectThread.cancel();
+      mConnectThread = null;
+    }
+
+    // Cancel any thread currently running a connection
+    if (mConnectedThread != null) {
+      mConnectedThread.cancel();
+      mConnectedThread = null;
+    }
+
+    // Start the thread to manage the connection and perform transmissions
+    mConnectedThread = new ConnectedThread(socket);
+    mConnectedThread.start();
+
+    // Send the name of the connected device back to the UI Activity
+    Message msg = mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_DEVICE_NAME);
+    Bundle bundle = new Bundle();
+    bundle.putString(BaseConnection.Constants.DEVICE_NAME, device.deviceName);
+    msg.setData(bundle);
+    mHandler.sendMessage(msg);
+
+    setState(STATE_CONNECTED);
+  }
+  //endregion
+
   //region Implement
   @Override
   public void register(Context context) {
+    mNsdHelper.registerListener(context);
     mManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+
     IntentFilter filter = new IntentFilter();
     filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
     filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
@@ -138,16 +180,35 @@ public final class WifiAdapter extends BaseConnection {
 
   @Override
   public void unregister(Context context) {
+    mNsdHelper.unregisterListener(context);
     context.unregisterReceiver(mReceiver);
   }
 
   @Override
-  public boolean quickConnect() {
+  public boolean startQuickConnect() {
     _connectToInAiR();
     return true;
   }
 
-  public static void connectWifiTo(String ssid, String bssid, String capabilities, String password, boolean autoConnect) {
+  @Override
+  public boolean stopQuickConnect() {
+    _disableInAirNetwork();
+    mManager.setWifiEnabled(false);
+    mManager.setWifiEnabled(true);
+    return true;
+  }
+
+  @Override
+  public void startScan() {
+    mNsdHelper.startDiscover();
+  }
+
+  @Override
+  public void stopScan() {
+    mNsdHelper.stopDiscover();
+  }
+
+  public static void connectWifiTo(String ssid, String bssid, String capabilities, String password) {
     WifiConfiguration config = new WifiConfiguration();
     config.SSID = "\"" + ssid + "\"";
     config.BSSID = bssid;
@@ -169,9 +230,10 @@ public final class WifiAdapter extends BaseConnection {
       ins.mManager.setWifiEnabled(true);
     }
     int netId = ins.mManager.addNetwork(config);
+
     ins.mManager.disconnect();
-    getInstance().mManager.enableNetwork(netId, false);
-    getInstance().mManager.reconnect();
+    ins.mManager.enableNetwork(netId, false);
+    ins.mManager.reconnect();
   }
 
   @Override
@@ -228,35 +290,7 @@ public final class WifiAdapter extends BaseConnection {
   }
   //endregion
 
-  private synchronized void connected(Socket socket, Device device) {
-    Log.d(TAG, "Connected " + device);
-
-    // Cancel the thread that completed the connection
-    if (mConnectThread != null) {
-      mConnectThread.cancel();
-      mConnectThread = null;
-    }
-
-    // Cancel any thread currently running a connection
-    if (mConnectedThread != null) {
-      mConnectedThread.cancel();
-      mConnectedThread = null;
-    }
-
-    // Start the thread to manage the connection and perform transmissions
-    mConnectedThread = new ConnectedThread(socket);
-    mConnectedThread.start();
-
-    // Send the name of the connected device back to the UI Activity
-    Message msg = mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_DEVICE_NAME);
-    Bundle bundle = new Bundle();
-    bundle.putString(BaseConnection.Constants.DEVICE_NAME, device.deviceName);
-    msg.setData(bundle);
-    mHandler.sendMessage(msg);
-
-    setState(STATE_CONNECTED);
-  }
-
+  //region Thread
   private class ConnectThread extends Thread {
     Device mDevice;
 
@@ -362,5 +396,139 @@ public final class WifiAdapter extends BaseConnection {
         Log.e(TAG, "close() of connect socket failed", e);
       }
     }
+  }
+  //endregion
+
+  private class NSDHelper implements NsdManager.ResolveListener, NsdManager.DiscoveryListener, NsdManager.RegistrationListener {
+
+    private static final String TAG = "NsdHelper";
+    private static final String SERVICE_NAME = "NsdAiRMote";
+    private static final String SERVICE_TYPE = "_irpc._tcp.";
+
+    private NsdManager mNsdManager;
+    private final Map<String, Device> mMap = new HashMap<>();
+    private boolean isScaning = false;
+
+    public void registerListener(Context context) {
+      mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+    }
+
+    public void unregisterListener(Context context) {
+      if (mNsdManager != null) {
+        stopDiscover();
+        mNsdManager = null;
+      }
+    }
+
+    public void startDiscover() {
+      if (isScaning) {
+        stopDiscover();
+      }
+      mMap.clear();
+      NsdServiceInfo serviceInfo = new NsdServiceInfo();
+      serviceInfo.setPort(INAIR_PORT);
+      serviceInfo.setServiceName(SERVICE_NAME);
+      serviceInfo.setServiceType(SERVICE_TYPE);
+      mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, this);
+      isScaning = true;
+    }
+
+    public void stopDiscover() {
+      try {
+        mNsdManager.stopServiceDiscovery(this);
+        mNsdManager.unregisterService(this);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      isScaning = false;
+    }
+
+    //region NsdManager.DiscoveryListener
+    @Override
+    public void onDiscoveryStarted(String regType) {
+      Log.d(TAG, "Service discovery started " + regType);
+    }
+
+    @Override
+    public void onServiceFound(NsdServiceInfo service) {
+      Log.d(TAG, "Service discovery success " + service);
+      String type = service.getServiceType();
+      String name = service.getServiceName();
+
+      if (type.isEmpty() && !name.contains(SERVICE_NAME)) {
+        mNsdManager.resolveService(service, this);
+      } else {
+        Log.d(TAG, "Unknown Service Type: " + name + " " + type);
+      }
+    }
+
+    @Override
+    public void onServiceLost(NsdServiceInfo service) {
+      Log.e(TAG, "service lost" + service);
+    }
+
+    @Override
+    public void onDiscoveryStopped(String serviceType) {
+      Log.i(TAG, "Discovery stopped: " + serviceType);
+    }
+
+    @Override
+    public void onStartDiscoveryFailed(String serviceType, int errorCode) {
+      Log.e(TAG, "Discovery failed: Error code:" + errorCode);
+      stopDiscover();
+    }
+
+    @Override
+    public void onStopDiscoveryFailed(String serviceType, int errorCode) {
+      Log.e(TAG, "Discovery failed: Error code:" + errorCode);
+      stopDiscover();
+    }
+    //endregion
+
+    //region NsdManager.ResolveListener
+    @Override
+    public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
+      Log.e(TAG, "Resolve failed" + errorCode);
+    }
+
+    @Override
+    public void onServiceResolved(NsdServiceInfo serviceInfo) {
+      Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
+      String name = serviceInfo.getServiceName();
+
+      if (name.contains(SERVICE_NAME)) {
+        Log.d(TAG, "Same IP.");
+        return;
+      }
+
+      String host = serviceInfo.getHost().getHostAddress();
+
+      if (!mMap.containsKey(host)) {
+        Device device = new Device(name.replace("\\032", " "), host);
+        mMap.put(host, device);
+        onDeviceFound(device);
+      }
+    }
+    //endregion
+
+    //region NsdManager.RegistrationListener
+    @Override
+    public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
+      System.out.println("NSDHelper.onServiceRegistered " + NsdServiceInfo.getServiceName());
+      mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, this);
+    }
+
+    @Override
+    public void onRegistrationFailed(NsdServiceInfo arg0, int arg1) {
+    }
+
+    @Override
+    public void onServiceUnregistered(NsdServiceInfo arg0) {
+    }
+
+    @Override
+    public void onUnregistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
+    }
+    //endregion
   }
 }

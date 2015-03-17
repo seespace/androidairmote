@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 
+import java.lang.ref.WeakReference;
+
 /**
  * <p>
  * Note this class is currently under early design and development.
@@ -52,17 +54,19 @@ public abstract class BaseConnection {
     }
   }
 
+  public interface DeviceFoundListener  {
+    void onDeviceFound(Device device);
+  }
+
   public interface Constants {
     // Message types sent from the BluetoothChatService Handler
     int MESSAGE_STATE_CHANGE = 1;
     int MESSAGE_READ = 2;
     int MESSAGE_WRITE = 3;
     int MESSAGE_DEVICE_NAME = 4;
-    int MESSAGE_TOAST = 5;
 
     // Key names received from the BluetoothChatService Handler
     String DEVICE_NAME = "device_name";
-    String TOAST = "toast";
   }
 
   //region Connection State
@@ -100,11 +104,33 @@ public abstract class BaseConnection {
   }
   //endregion
 
+  private WeakReference<DeviceFoundListener> mDeviceFoundListener = null;
+
+  public final void registerDeviceFoundListener(DeviceFoundListener listener) {
+    if (listener != null) {
+      mDeviceFoundListener = new WeakReference<>(listener);
+    } else {
+      mDeviceFoundListener = null;
+    }
+  }
+
+  protected final void onDeviceFound(Device device) {
+    if (mDeviceFoundListener != null && mDeviceFoundListener.get() != null) {
+      mDeviceFoundListener.get().onDeviceFound(device);
+    }
+  }
+
   public void register(Context context) {}
 
   public void unregister(Context context) {}
 
-  public abstract boolean quickConnect();
+  public abstract boolean startQuickConnect();
+
+  public abstract boolean stopQuickConnect();
+
+  public abstract void startScan();
+
+  public abstract void stopScan();
 
   public abstract boolean connect(Device device);
 
