@@ -47,7 +47,6 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     super.onAttach(activity);
     mClient = Application.getSocketClient();
 
-    mClient.register(this);
     mClient.addEventReceivedListener(this);
     mClient.addSocketStateChangedListener(this);
 
@@ -145,10 +144,6 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onDetach() {
-    try {
-      mClient.unregister();
-    } catch (IllegalArgumentException ignore) {
-    }
     super.onDetach();
   }
 
@@ -215,7 +210,6 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   private void settingDevice() {
-    mClient.disconnect();
     mGuideImage.setVisibility(View.VISIBLE);
     mClient.changeToSettingMode(true);
   }

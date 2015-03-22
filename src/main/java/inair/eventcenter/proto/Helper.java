@@ -1,8 +1,10 @@
-package tv.inair.airmote.remote;
+package inair.eventcenter.proto;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Point;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.Settings;
 import android.view.Display;
@@ -12,8 +14,7 @@ import com.google.protobuf.nano.InvalidProtocolBufferNanoException;
 import com.google.protobuf.nano.MessageNano;
 
 import java.nio.ByteBuffer;
-
-import inair.eventcenter.proto.Proto;
+import java.util.List;
 
 /**
  * Copyright (c) 2014 SeeSpace.co. All rights reserved.
@@ -252,6 +253,112 @@ public class Helper {
 
     return buildEvent(now(), 0, 0, Proto.Event.TEXT_INPUT_REQUEST, null, null)
         .setExtension(Proto.TextInputRequestEvent.event, event);
+  }
+  //endregion
+
+  //region Wifi setup
+  public static Proto.Event newCodeResponseEvent(String code) {
+    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
+    event.phase = Proto.REQUEST_CODE;
+    event.error = false;
+    event.code = code;
+
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
+        .setExtension(Proto.SetupResponseEvent.event, event);
+  }
+
+  public static Proto.Event newRenameResponseEvent(boolean error, String errorMessage) {
+    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
+    event.phase = Proto.REQUEST_RENAME;
+    event.error = error;
+    event.errorMessage = errorMessage;
+
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
+        .setExtension(Proto.SetupResponseEvent.event, event);
+  }
+
+  public static Proto.Event newRenameResponseEvent() {
+    return newRenameResponseEvent(false, "");
+  }
+
+  public static Proto.Event newNetworkListResponseEvent(String errorMessage) {
+    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
+    event.phase = Proto.REQUEST_WIFI_SCAN;
+    event.error = true;
+    event.errorMessage = errorMessage;
+
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
+        .setExtension(Proto.SetupResponseEvent.event, event);
+  }
+
+  public static Proto.Event newNetworkListResponseEvent(List<ScanResult> scanResults) {
+    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
+    event.phase = Proto.REQUEST_WIFI_SCAN;
+    event.error = false;
+
+    if (scanResults.size() > 0) {
+      event.wifiNetworks = new Proto.WifiNetwork[scanResults.size()];
+      for (int i = 0; i < scanResults.size(); i++) {
+        ScanResult result = scanResults.get(i);
+        Proto.WifiNetwork network = new Proto.WifiNetwork();
+        network.ssid = result.SSID;
+        network.bssid = result.BSSID;
+        network.strength = WifiManager.calculateSignalLevel(result.level, 4);
+        network.capabilities = result.capabilities;
+        event.wifiNetworks[i] = network;
+      }
+    }
+
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
+        .setExtension(Proto.SetupResponseEvent.event, event);
+  }
+
+  public static Proto.Event newNetworkConnectResponseEvent() {
+    return newNetworkConnectResponseEvent(false, "");
+  }
+
+  public static Proto.Event newNetworkConnectResponseEvent(boolean error, String errorMessage) {
+    Proto.SetupResponseEvent event = new Proto.SetupResponseEvent();
+    event.phase = Proto.REQUEST_WIFI_CONNECT;
+    event.error = error;
+    event.errorMessage = errorMessage;
+
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_RESPONSE, null, null)
+        .setExtension(Proto.SetupResponseEvent.event, event);
+  }
+  //endregion
+
+  //region WebView
+  public static Proto.Event newWebViewRequestEvent(String url, String replyTo) {
+    Proto.WebViewRequestEvent event = new Proto.WebViewRequestEvent();
+    event.url = url;
+
+    return buildEvent(now(), 0, 0, Proto.Event.WEBVIEW_REQUEST, replyTo, null)
+      .setExtension(Proto.WebViewRequestEvent.event, event);
+  }
+
+  public static Proto.Event newWebViewResponseEvent(String data, String replyTo) {
+    Proto.WebViewResponseEvent event = new Proto.WebViewResponseEvent();
+    event.data = data;
+
+    return buildEvent(now(), 0, 0, Proto.Event.WEBVIEW_RESPONSE, replyTo, null)
+      .setExtension(Proto.WebViewResponseEvent.event, event);
+  }
+  //endregion
+
+  //region Ping Pong
+  public static Proto.Event newPingEvent() {
+    Proto.PingEvent event = new Proto.PingEvent();
+
+    return buildEvent(now(), 0, 0, Proto.Event.PING, null, null)
+      .setExtension(Proto.PingEvent.event, event);
+  }
+
+  public static Proto.Event newPongEvent() {
+    Proto.PongEvent event = new Proto.PongEvent();
+
+    return buildEvent(now(), 0, 0, Proto.Event.PONG, null, null)
+      .setExtension(Proto.PongEvent.event, event);
   }
   //endregion
 

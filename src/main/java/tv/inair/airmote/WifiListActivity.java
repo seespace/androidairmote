@@ -17,8 +17,9 @@ import android.widget.TextView;
 
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
+import tv.inair.airmote.connection.OnSocketStateChanged;
 import tv.inair.airmote.connection.SocketClient;
-import tv.inair.airmote.remote.Helper;
+import inair.eventcenter.proto.Helper;
 
 /**
  * <p>
@@ -29,7 +30,7 @@ import tv.inair.airmote.remote.Helper;
  * <p/>
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
-public class WifiListActivity extends Activity implements AdapterView.OnItemClickListener, OnEventReceived {
+public class WifiListActivity extends Activity implements AdapterView.OnItemClickListener, OnEventReceived, OnSocketStateChanged {
 
   public static final String EXTRA_SSID = "@wla_ssid";
   public static final String EXTRA_BSSID = "@wla_bssid";
@@ -101,6 +102,7 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
 
     mClient = Application.getSocketClient();
     mClient.addEventReceivedListener(this);
+    mClient.addSocketStateChangedListener(this);
 
     adapter = new WifiListAdapter(this, R.layout.wifi_item);
 
@@ -143,6 +145,13 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
   }
 
   @Override
+  public void onStateChanged(boolean connect, String message) {
+    if ("STOP_SETUP".equals(message)) {
+      finishAffinity();
+    }
+  }
+
+  @Override
   public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
     RowItem item = adapter.getItem(position);
     if (item.isOpenNetwork()) {
@@ -168,6 +177,9 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
 
   @Override
   public void onEventReceived(Proto.Event event) {
+    if (isFinishing()) {
+      return;
+    }
     if (event != null && event.type != null) {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
       assert responseEvent != null;

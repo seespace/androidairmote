@@ -11,7 +11,7 @@ import android.widget.TextView;
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.SocketClient;
-import tv.inair.airmote.remote.Helper;
+import inair.eventcenter.proto.Helper;
 
 /**
  * <p>
@@ -59,6 +59,9 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
 
   @Override
   public void onEventReceived(Proto.Event event) {
+    if (isFinishing()) {
+      return;
+    }
     if (event != null && event.type != null) {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
       assert responseEvent != null;

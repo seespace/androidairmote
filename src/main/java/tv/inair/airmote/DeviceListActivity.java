@@ -56,8 +56,8 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
 
     mClient = Application.getSocketClient();
 
-    progress = ProgressDialog.show(this, "", "Loading...", true);
-    setVisible(false);
+    //progress = ProgressDialog.show(this, "", "Loading...", true);
+    //setVisible(false);
 
     // Setup the window
     setContentView(R.layout.activity_list);
@@ -81,9 +81,9 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
   protected void onDestroy() {
     cancelDiscovery();
     System.out.println("DeviceListActivity.onDestroy");
-    if (progress.isShowing()) {
-      progress.dismiss();
-    }
+    //if (progress.isShowing()) {
+    //  progress.dismiss();
+    //}
     super.onDestroy();
   }
 

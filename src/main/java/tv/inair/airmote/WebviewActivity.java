@@ -13,7 +13,7 @@ import android.webkit.WebViewClient;
 
 import java.util.Set;
 
-import tv.inair.airmote.remote.Helper;
+import inair.eventcenter.proto.Helper;
 
 public class WebviewActivity extends Activity {
 

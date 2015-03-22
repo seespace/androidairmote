@@ -16,8 +16,8 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
@@ -60,7 +60,7 @@ public final class WifiAdapter extends BaseConnection {
 
   //region Wifi
   private static final WifiConfiguration INAIR_WIFI_CONFIG = new WifiConfiguration();
-  private static final String INAIR_SSID = String.format("\"%s\"", "InAir");
+  private static final String INAIR_SSID = String.format("\"%s\"", "InAiR");
   private static final String INAIR_PASSWORD = String.format("\"%s\"", "12345678");
 
   private static final Device INAIR_DEVICE = new Device("inAiR", "192.168.49.1");
@@ -330,16 +330,22 @@ public final class WifiAdapter extends BaseConnection {
   private class ConnectedThread extends Thread {
     private final Socket mmSocket;
     private DataInputStream mDataIS;
-    private DataOutputStream mDataOS;
+    private OutputStream mDataOS;
 
     public ConnectedThread(Socket socket) {
       Log.d(TAG, "CREATE ConnectedThread");
       mmSocket = socket;
 
       // Get the Socket input and output streams
+
+      try {
+        mDataOS = socket.getOutputStream();
+      } catch (IOException e) {
+        Log.e(TAG, "temp sockets not created", e);
+      }
+
       try {
         mDataIS = new DataInputStream(socket.getInputStream());
-        mDataOS = new DataOutputStream(socket.getOutputStream());
       } catch (IOException e) {
         Log.e(TAG, "temp sockets not created", e);
       }
@@ -355,6 +361,7 @@ public final class WifiAdapter extends BaseConnection {
       while (!isInterrupted()) {
         try {
           if (mDataIS.available() > 0) {
+            System.out.println("ConnectedThread.AVAILABLE " + mDataIS.available());
             length = mDataIS.readInt();
             mDataIS.readFully(buffer, 0, length);
 
@@ -380,6 +387,7 @@ public final class WifiAdapter extends BaseConnection {
     public void write(byte[] buffer) {
       try {
         mDataOS.write(buffer);
+        mDataOS.flush();
       } catch (IOException e) {
         Log.e(TAG, "Exception during write", e);
         connectionLost();
@@ -411,11 +419,20 @@ public final class WifiAdapter extends BaseConnection {
 
     public void registerListener(Context context) {
       mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
+
+      NsdServiceInfo serviceInfo = new NsdServiceInfo();
+      serviceInfo.setPort(INAIR_PORT);
+      serviceInfo.setServiceName(SERVICE_NAME);
+      serviceInfo.setServiceType(SERVICE_TYPE);
+      mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, this);
+
+      System.out.println("NSDHelper.registerListener");
     }
 
     public void unregisterListener(Context context) {
       if (mNsdManager != null) {
         stopDiscover();
+        mNsdManager.unregisterService(this);
         mNsdManager = null;
       }
     }
@@ -425,18 +442,16 @@ public final class WifiAdapter extends BaseConnection {
         stopDiscover();
       }
       mMap.clear();
-      NsdServiceInfo serviceInfo = new NsdServiceInfo();
-      serviceInfo.setPort(INAIR_PORT);
-      serviceInfo.setServiceName(SERVICE_NAME);
-      serviceInfo.setServiceType(SERVICE_TYPE);
-      mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, this);
+      mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, this);
       isScaning = true;
     }
 
     public void stopDiscover() {
+      if (!isScaning) {
+        return;
+      }
       try {
         mNsdManager.stopServiceDiscovery(this);
-        mNsdManager.unregisterService(this);
       } catch (Exception e) {
         e.printStackTrace();
       }
@@ -452,14 +467,12 @@ public final class WifiAdapter extends BaseConnection {
     @Override
     public void onServiceFound(NsdServiceInfo service) {
       Log.d(TAG, "Service discovery success " + service);
-      String type = service.getServiceType();
-      String name = service.getServiceName();
-
-      if (type.isEmpty() && !name.contains(SERVICE_NAME)) {
-        mNsdManager.resolveService(service, this);
-      } else {
-        Log.d(TAG, "Unknown Service Type: " + name + " " + type);
-      }
+      //String type = service.getServiceType();
+      //String name = service.getServiceName();
+      Device device = new Device(service.getServiceName(), null);
+      device.parcelable = service;
+      onDeviceFound(device);
+      //mNsdManager.resolveService(service, this);
     }
 
     @Override
@@ -506,28 +519,29 @@ public final class WifiAdapter extends BaseConnection {
       if (!mMap.containsKey(host)) {
         Device device = new Device(name.replace("\\032", " "), host);
         mMap.put(host, device);
-        onDeviceFound(device);
       }
     }
     //endregion
 
     //region NsdManager.RegistrationListener
     @Override
-    public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
-      System.out.println("NSDHelper.onServiceRegistered " + NsdServiceInfo.getServiceName());
-      mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, this);
+    public void onServiceRegistered(NsdServiceInfo serviceInfo) {
+      System.out.println("NSDHelper.onServiceRegistered " + serviceInfo.getServiceName());
     }
 
     @Override
-    public void onRegistrationFailed(NsdServiceInfo arg0, int arg1) {
+    public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
+      System.out.println("NSDHelper.onRegistrationFailed " + serviceInfo.getServiceName() + " " + errorCode);
     }
 
     @Override
-    public void onServiceUnregistered(NsdServiceInfo arg0) {
+    public void onServiceUnregistered(NsdServiceInfo serviceInfo) {
+      System.out.println("NSDHelper.onServiceUnregistered " + serviceInfo.getServiceName());
     }
 
     @Override
     public void onUnregistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
+      System.out.println("NSDHelper.onUnregistrationFailed " + serviceInfo.getServiceName() + " " + errorCode);
     }
     //endregion
   }

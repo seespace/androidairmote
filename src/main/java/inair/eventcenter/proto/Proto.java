@@ -6,7 +6,7 @@ package inair.eventcenter.proto;
 public interface Proto {
 
   // enum Version
-  public static final int CURRENT = 21;
+  public static final int CURRENT = 22;
 
   // enum Phase
   public static final int BEGAN = 0;
@@ -43,6 +43,8 @@ public interface Proto {
     public static final int FUNCTION_EVENT = 13;
     public static final int WEBVIEW_REQUEST = 14;
     public static final int WEBVIEW_RESPONSE = 15;
+    public static final int PING = 16;
+    public static final int PONG = 17;
 
     private static volatile Event[] _emptyArray;
     public static Event[] emptyArray() {
@@ -190,6 +192,8 @@ public interface Proto {
               case inair.eventcenter.proto.Proto.Event.FUNCTION_EVENT:
               case inair.eventcenter.proto.Proto.Event.WEBVIEW_REQUEST:
               case inair.eventcenter.proto.Proto.Event.WEBVIEW_RESPONSE:
+              case inair.eventcenter.proto.Proto.Event.PING:
+              case inair.eventcenter.proto.Proto.Event.PONG:
                 this.type = value;
                 break;
             }
@@ -2537,6 +2541,124 @@ public interface Proto {
             com.google.protobuf.nano.CodedInputByteBufferNano input)
         throws java.io.IOException {
       return new WebViewResponseEvent().mergeFrom(input);
+    }
+  }
+
+  public static final class PingEvent extends
+      com.google.protobuf.nano.ExtendableMessageNano<PingEvent> {
+
+    // extend .inair.eventcenter.proto.Event {
+    //   optional .inair.eventcenter.proto.PingEvent event = 115;
+    public static final com.google.protobuf.nano.Extension<
+        inair.eventcenter.proto.Proto.Event,
+        inair.eventcenter.proto.Proto.PingEvent> event =
+            com.google.protobuf.nano.Extension.createMessageTyped(
+                com.google.protobuf.nano.Extension.TYPE_MESSAGE,
+                inair.eventcenter.proto.Proto.PingEvent.class,
+                922);
+
+    private static final PingEvent[] EMPTY_ARRAY = {};
+    public static PingEvent[] emptyArray() {
+      return EMPTY_ARRAY;
+    }
+
+    public PingEvent() {
+      clear();
+    }
+
+    public PingEvent clear() {
+      unknownFieldData = null;
+      cachedSize = -1;
+      return this;
+    }
+
+    @Override
+    public PingEvent mergeFrom(
+            com.google.protobuf.nano.CodedInputByteBufferNano input)
+        throws java.io.IOException {
+      while (true) {
+        int tag = input.readTag();
+        switch (tag) {
+          case 0:
+            return this;
+          default: {
+            if (!storeUnknownField(input, tag)) {
+              return this;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    public static PingEvent parseFrom(byte[] data)
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new PingEvent(), data);
+    }
+
+    public static PingEvent parseFrom(
+            com.google.protobuf.nano.CodedInputByteBufferNano input)
+        throws java.io.IOException {
+      return new PingEvent().mergeFrom(input);
+    }
+  }
+
+  public static final class PongEvent extends
+      com.google.protobuf.nano.ExtendableMessageNano<PongEvent> {
+
+    // extend .inair.eventcenter.proto.Event {
+    //   optional .inair.eventcenter.proto.PongEvent event = 116;
+    public static final com.google.protobuf.nano.Extension<
+        inair.eventcenter.proto.Proto.Event,
+        inair.eventcenter.proto.Proto.PongEvent> event =
+            com.google.protobuf.nano.Extension.createMessageTyped(
+                com.google.protobuf.nano.Extension.TYPE_MESSAGE,
+                inair.eventcenter.proto.Proto.PongEvent.class,
+                930);
+
+    private static final PongEvent[] EMPTY_ARRAY = {};
+    public static PongEvent[] emptyArray() {
+      return EMPTY_ARRAY;
+    }
+
+    public PongEvent() {
+      clear();
+    }
+
+    public PongEvent clear() {
+      unknownFieldData = null;
+      cachedSize = -1;
+      return this;
+    }
+
+    @Override
+    public PongEvent mergeFrom(
+            com.google.protobuf.nano.CodedInputByteBufferNano input)
+        throws java.io.IOException {
+      while (true) {
+        int tag = input.readTag();
+        switch (tag) {
+          case 0:
+            return this;
+          default: {
+            if (!storeUnknownField(input, tag)) {
+              return this;
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    public static PongEvent parseFrom(byte[] data)
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new PongEvent(), data);
+    }
+
+    public static PongEvent parseFrom(
+            com.google.protobuf.nano.CodedInputByteBufferNano input)
+        throws java.io.IOException {
+      return new PongEvent().mergeFrom(input);
     }
   }
 }

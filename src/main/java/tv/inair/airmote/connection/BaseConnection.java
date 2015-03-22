@@ -3,6 +3,7 @@ package tv.inair.airmote.connection;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
+import android.os.Parcelable;
 
 import java.lang.ref.WeakReference;
 
@@ -22,6 +23,7 @@ public abstract class BaseConnection {
 
     public String deviceName;
     public String address;
+    public Parcelable parcelable;
 
     public Device(String deviceName, String address) {
       this.deviceName = deviceName;
@@ -115,6 +117,7 @@ public abstract class BaseConnection {
   }
 
   protected final void onDeviceFound(Device device) {
+    System.out.println("device = [" + device + "]" + " " + mDeviceFoundListener.get());
     if (mDeviceFoundListener != null && mDeviceFoundListener.get() != null) {
       mDeviceFoundListener.get().onDeviceFound(device);
     }

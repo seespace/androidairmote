@@ -1,5 +1,6 @@
 package tv.inair.airmote.connection;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -7,7 +8,6 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
@@ -15,9 +15,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import inair.eventcenter.proto.Helper;
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.Application;
-import tv.inair.airmote.remote.Helper;
 
 public final class SocketClient {
 
@@ -41,13 +41,14 @@ public final class SocketClient {
         case Intent.ACTION_POWER_CONNECTED: {
           mUSBConnected = true;
           Application.notify(context, "USB Connected");
-//          Toast.makeText(context, "USB Connected", Toast.LENGTH_SHORT).show();
+          //          Toast.makeText(context, "USB Connected", Toast.LENGTH_SHORT).show();
           quickScanAndConnect();
           break;
         }
 
         case Intent.ACTION_POWER_DISCONNECTED:
           mUSBConnected = false;
+          onStateChanged(false, "STOP_SETUP");
           stopScanAndQuickConnect();
           break;
 
@@ -57,15 +58,15 @@ public final class SocketClient {
           break;
         }
 
-//        case ACTION_USB_STATE: {
-//          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
-//          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
-//          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
-//          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
-//          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
-//          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
-//          System.out.println(des);
-//        }
+        //        case ACTION_USB_STATE: {
+        //          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
+        //          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
+        //          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
+        //          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
+        //          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
+        //          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
+        //          System.out.println(des);
+        //        }
       }
     }
   };
@@ -76,12 +77,12 @@ public final class SocketClient {
     if (!mIsPC || !mUSBConnected || !mSettingUp) {
       return;
     }
-    Application.notify(fragment.get().getActivity(), "Connecting ...");
+    Application.notify(activity.get(), "Connecting ...");
     mConnection.startQuickConnect();
   }
 
   private void stopScanAndQuickConnect() {
-    Application.notify(fragment.get().getActivity(), "No device connect");
+    Application.notify(activity.get(), "No device connect");
     mConnection.stopQuickConnect();
   }
 
@@ -98,28 +99,29 @@ public final class SocketClient {
     return mSettingUp;
   }
 
-  private WeakReference<Fragment> fragment;
+  private WeakReference<Activity> activity;
+  private Context context;
 
-  public void register(Fragment context) {
-    fragment = new WeakReference<>(context);
+  public void register(Activity context) {
+    activity = new WeakReference<>(context);
 
     IntentFilter filter = new IntentFilter();
     filter.addAction(Intent.ACTION_POWER_CONNECTED);
     filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
     filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-//    filter.addAction(ACTION_USB_STATE);
-    context.getActivity().registerReceiver(receiver, filter);
+    //    filter.addAction(ACTION_USB_STATE);
+    context.registerReceiver(receiver, filter);
 
-    mConnection.register(context.getActivity());
+    mConnection.register(context);
   }
 
   public void unregister() {
-    if (fragment != null && fragment.get() != null) {
-      Fragment f = fragment.get();
-      mConnection.unregister(f.getActivity());
-      f.getActivity().unregisterReceiver(receiver);
-      mConnection.unregister(f.getActivity());
-      fragment = null;
+    if (activity != null && activity.get() != null) {
+      Activity f = activity.get();
+      mConnection.unregister(f);
+      f.unregisterReceiver(receiver);
+      mConnection.unregister(f);
+      activity = null;
     }
   }
   //endregion
@@ -160,7 +162,7 @@ public final class SocketClient {
 
   public boolean connectTo(BaseConnection.Device device) {
     Log.d(TAG, "ConnectTo " + device.address + " " + device.deviceName);
-    Application.notify(fragment.get().getActivity(), "Connecting ...");
+    Application.notify(activity.get(), "Connecting ...");
     mDevice = device;
     return mConnection.connect(device);
   }
@@ -230,12 +232,12 @@ public final class SocketClient {
         // BaseConnection.Device.saveToPref(Application.getTempPreferences(), mDevice);
         // BaseConnection.Device.saveToPref(Application.getSettingsPreferences(), mDevice);
         onStateChanged(true, mDevice.deviceName);
-        Application.notify(fragment.get().getActivity(), "Connected to " + mDevice.deviceName);
+        Application.notify(activity.get(), "Connected to " + mDevice.deviceName);
         break;
 
       case BaseConnection.STATE_NONE:
         onStateChanged(false, mDevice.deviceName);
-        Application.notify(fragment.get().getActivity(), "Disconnected");
+        Application.notify(activity.get(), "Disconnected");
         break;
     }
   }
@@ -268,7 +270,7 @@ public final class SocketClient {
 
         case BaseConnection.Constants.MESSAGE_DEVICE_NAME:
           // save the connected device's name
-           client.updateDeviceName(msg.getData().getString(BaseConnection.Constants.DEVICE_NAME));
+          client.updateDeviceName(msg.getData().getString(BaseConnection.Constants.DEVICE_NAME));
           break;
 
         default:

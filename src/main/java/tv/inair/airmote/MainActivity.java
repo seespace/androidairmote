@@ -39,6 +39,8 @@ public class MainActivity extends FragmentActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    Application.getSocketClient().register(this);
+
     if (savedInstanceState == null) {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
       if (fragment == null) {
@@ -59,7 +61,8 @@ public class MainActivity extends FragmentActivity {
 
   @Override
   protected void onDestroy() {
-    super.onDestroy();
+    Application.getSocketClient().unregister();
     Application.notify(this, null);
+    super.onDestroy();
   }
 }

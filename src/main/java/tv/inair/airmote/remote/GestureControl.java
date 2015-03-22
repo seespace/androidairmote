@@ -8,6 +8,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
+import inair.eventcenter.proto.Helper;
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.Application;
 
@@ -85,12 +86,8 @@ public class GestureControl implements View.OnTouchListener, GestureDetector.OnD
         break;
     }
     if (phase != null) {
-      Application.getSocketClient().sendEvent(Helper.newTouchEvent(
-          Helper.now(),
-          event.getX(), event.getY(),
-          mElement.getWidth(), mElement.getHeight(),
-          phase
-      ));
+      Application.getSocketClient().sendEvent(Helper.newTouchEvent(Helper.now(), event.getX(), event.getY(), mElement.getWidth(), mElement
+          .getHeight(), phase));
     }
 
     mDetector.onTouchEvent(event);
