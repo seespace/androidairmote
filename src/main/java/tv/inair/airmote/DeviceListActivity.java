@@ -26,6 +26,9 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import tv.inair.airmote.connection.BaseConnection;
 import tv.inair.airmote.connection.SocketClient;
 
@@ -56,17 +59,12 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
 
     mClient = Application.getSocketClient();
 
-    //progress = ProgressDialog.show(this, "", "Loading...", true);
-    //setVisible(false);
-
     // Setup the window
     setContentView(R.layout.activity_list);
 
     // Set result CANCELED in case the user backs out
     setResult(Activity.RESULT_CANCELED);
 
-    // Initialize array adapters. One for already paired devices and
-    // one for newly discovered devices
     mDevicesAdapter = new ArrayAdapter<>(this, R.layout.device_item);
 
     // Find and set up the ListView for newly discovered devices
@@ -81,18 +79,21 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
   protected void onDestroy() {
     cancelDiscovery();
     System.out.println("DeviceListActivity.onDestroy");
-    //if (progress.isShowing()) {
-    //  progress.dismiss();
-    //}
     super.onDestroy();
   }
 
   @Override
   public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    cancelDiscovery();
+    mClient.connectTo(devices.get(position));
+    finish();
   }
+
+  List<BaseConnection.Device> devices = new ArrayList<>();
 
   @Override
   public void onDeviceFound(BaseConnection.Device device) {
+    devices.add(device);
     mDevicesAdapter.add(device.deviceName);
   }
 

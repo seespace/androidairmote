@@ -21,9 +21,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import tv.inair.airmote.Application;
 
@@ -242,6 +240,11 @@ public final class WifiAdapter extends BaseConnection {
       return false;
     }
 
+    if (device.parcelable != null && device.address == null) {
+      mNsdHelper.resolveAndConnectDevice(device);
+      return false;
+    }
+
     System.out.println("WifiAdapter.connect " + device);
 
     if (mConnectThread != null) {
@@ -407,15 +410,16 @@ public final class WifiAdapter extends BaseConnection {
   }
   //endregion
 
-  private class NSDHelper implements NsdManager.ResolveListener, NsdManager.DiscoveryListener, NsdManager.RegistrationListener {
+  private class NSDHelper implements NsdManager.RegistrationListener {
 
     private static final String TAG = "NsdHelper";
     private static final String SERVICE_NAME = "NsdAiRMote";
     private static final String SERVICE_TYPE = "_irpc._tcp.";
 
     private NsdManager mNsdManager;
-    private final Map<String, Device> mMap = new HashMap<>();
     private boolean isScaning = false;
+    private final DiscoveryListener discoveryListener = new DiscoveryListener();
+    private final ResolveListener resolveListener = new ResolveListener();
 
     public void registerListener(Context context) {
       mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
@@ -441,8 +445,7 @@ public final class WifiAdapter extends BaseConnection {
       if (isScaning) {
         stopDiscover();
       }
-      mMap.clear();
-      mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, this);
+      mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
       isScaning = true;
     }
 
@@ -451,74 +454,85 @@ public final class WifiAdapter extends BaseConnection {
         return;
       }
       try {
-        mNsdManager.stopServiceDiscovery(this);
+        mNsdManager.stopServiceDiscovery(discoveryListener);
       } catch (Exception e) {
         e.printStackTrace();
       }
       isScaning = false;
     }
 
+    public void resolveAndConnectDevice(Device device) {
+      NsdServiceInfo info = (NsdServiceInfo) device.parcelable;
+      resolveListener.currentDevice = device;
+      mNsdManager.resolveService(info, resolveListener);
+    }
+
     //region NsdManager.DiscoveryListener
-    @Override
-    public void onDiscoveryStarted(String regType) {
-      Log.d(TAG, "Service discovery started " + regType);
-    }
+    private class DiscoveryListener implements NsdManager.DiscoveryListener {
 
-    @Override
-    public void onServiceFound(NsdServiceInfo service) {
-      Log.d(TAG, "Service discovery success " + service);
-      //String type = service.getServiceType();
-      //String name = service.getServiceName();
-      Device device = new Device(service.getServiceName(), null);
-      device.parcelable = service;
-      onDeviceFound(device);
-      //mNsdManager.resolveService(service, this);
-    }
+      @Override
+      public void onDiscoveryStarted(String regType) {
+        Log.d(TAG, "Service discovery started " + regType);
+      }
 
-    @Override
-    public void onServiceLost(NsdServiceInfo service) {
-      Log.e(TAG, "service lost" + service);
-    }
+      @Override
+      public void onServiceFound(NsdServiceInfo service) {
+        Log.d(TAG, "Service discovery success " + service);
+        String name = service.getServiceName();
+        if (name.contains(SERVICE_NAME)) {
+          Log.d(TAG, "Same IP.");
+          return;
+        }
+        Device device = new Device(service.getServiceName(), null);
+        device.parcelable = service;
+        onDeviceFound(device);
+      }
 
-    @Override
-    public void onDiscoveryStopped(String serviceType) {
-      Log.i(TAG, "Discovery stopped: " + serviceType);
-    }
+      @Override
+      public void onServiceLost(NsdServiceInfo service) {
+        Log.e(TAG, "service lost" + service);
+      }
 
-    @Override
-    public void onStartDiscoveryFailed(String serviceType, int errorCode) {
-      Log.e(TAG, "Discovery failed: Error code:" + errorCode);
-      stopDiscover();
-    }
+      @Override
+      public void onDiscoveryStopped(String serviceType) {
+        Log.i(TAG, "Discovery stopped: " + serviceType);
+      }
 
-    @Override
-    public void onStopDiscoveryFailed(String serviceType, int errorCode) {
-      Log.e(TAG, "Discovery failed: Error code:" + errorCode);
-      stopDiscover();
+      @Override
+      public void onStartDiscoveryFailed(String serviceType, int errorCode) {
+        Log.e(TAG, "Discovery failed: Error code:" + errorCode);
+        stopDiscover();
+      }
+
+      @Override
+      public void onStopDiscoveryFailed(String serviceType, int errorCode) {
+        Log.e(TAG, "Discovery failed: Error code:" + errorCode);
+        stopDiscover();
+      }
     }
     //endregion
 
     //region NsdManager.ResolveListener
-    @Override
-    public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
-      Log.e(TAG, "Resolve failed" + errorCode);
-    }
+    private class ResolveListener implements NsdManager.ResolveListener {
+      Device currentDevice;
 
-    @Override
-    public void onServiceResolved(NsdServiceInfo serviceInfo) {
-      Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
-      String name = serviceInfo.getServiceName();
-
-      if (name.contains(SERVICE_NAME)) {
-        Log.d(TAG, "Same IP.");
-        return;
+      @Override
+      public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
+        Log.e(TAG, "Resolve failed" + errorCode);
       }
 
-      String host = serviceInfo.getHost().getHostAddress();
+      @Override
+      public void onServiceResolved(final NsdServiceInfo serviceInfo) {
+        Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
 
-      if (!mMap.containsKey(host)) {
-        Device device = new Device(name.replace("\\032", " "), host);
-        mMap.put(host, device);
+        mHandler.post(new Runnable() {
+          @Override
+          public void run() {
+            currentDevice.address = serviceInfo.getHost().getHostAddress();
+            connect(currentDevice);
+            currentDevice = null;
+          }
+        });
       }
     }
     //endregion

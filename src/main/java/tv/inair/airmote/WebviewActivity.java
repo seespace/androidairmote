@@ -31,6 +31,8 @@ public class WebviewActivity extends Activity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    getWindow().requestFeature(Window.FEATURE_PROGRESS);
+
     ActionBar actionBar = getActionBar();
     if (actionBar != null) {
       actionBar.setDisplayHomeAsUpEnabled(true);
@@ -39,8 +41,6 @@ public class WebviewActivity extends Activity {
     Intent i = getIntent();
     url = i.getStringExtra(EXTRA_URL);
     replyTo = i.getStringExtra(EXTRA_REPLY_TO);
-
-    getWindow().requestFeature(Window.FEATURE_PROGRESS);
 
     webView = new WebView(this);
     setContentView(webView);
