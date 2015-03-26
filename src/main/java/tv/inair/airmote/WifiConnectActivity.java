@@ -1,16 +1,17 @@
 package tv.inair.airmote;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
-import tv.inair.airmote.remote.Helper;
-import tv.inair.airmote.remote.Proto;
+import tv.inair.airmote.connection.SocketClient;
+import inair.eventcenter.proto.Helper;
 
 /**
  * <p>
@@ -23,19 +24,29 @@ import tv.inair.airmote.remote.Proto;
  */
 public class WifiConnectActivity extends Activity implements OnEventReceived {
 
-  public static final String EXTRA_SSID = "extra_ssid";
+  public static final String EXTRA_SSID = "#wca_ssid";
+  public static final String EXTRA_PASSWORD = "#wca_password";
 
   private EditText passwordView;
   private String ssid;
+
+  private SocketClient mClient;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    Application.getSocketClient().addEventReceivedListener(this);
+    ActionBar actionBar = getActionBar();
+    if (actionBar != null) {
+      actionBar.setDisplayHomeAsUpEnabled(true);
+    }
+
     setResult(Activity.RESULT_CANCELED);
 
-    setTitle("Connect to WIFI");
+    mClient = Application.getSocketClient();
+    mClient.addEventReceivedListener(this);
+
+    setTitle("Enter Password");
     setContentView(R.layout.activity_connect);
 
     Intent i = getIntent();
@@ -48,14 +59,21 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
 
   @Override
   public void onEventReceived(Proto.Event event) {
+    if (isFinishing()) {
+      return;
+    }
     if (event != null && event.type != null) {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
+      assert responseEvent != null;
       if (responseEvent.phase == Proto.REQUEST_WIFI_CONNECT) {
         if (responseEvent.error) {
-          Toast.makeText(this, responseEvent.errorMessage, Toast.LENGTH_SHORT).show();
+          Application.notify(this, responseEvent.errorMessage);
         } else {
-          Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
-          setResult(Activity.RESULT_OK);
+          System.out.println("WifiConnectActivity.onEventReceived connected");
+          Intent res = new Intent();
+          res.putExtra(EXTRA_SSID, ssid);
+          res.putExtra(EXTRA_PASSWORD, passwordView.getText().toString());
+          setResult(Activity.RESULT_OK, res);
           finish();
         }
       }
@@ -63,7 +81,6 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   }
 
   public void onConnectButtonClicked(View view) {
-    System.out.println("WifiConnectActivity.onConnectButtonClicked");
-    Application.getSocketClient().sendEvent(Helper.setupWifiConnectRequestWithSSID(ssid, passwordView.getText().toString()));
+    mClient.sendEvent(Helper.setupWifiConnectRequestWithSSID(ssid, passwordView.getText().toString()));
   }
 }

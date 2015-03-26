@@ -1,5 +1,11 @@
 package tv.inair.airmote.connection;
 
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -9,148 +15,194 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import inair.eventcenter.proto.Helper;
+import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.Application;
-import tv.inair.airmote.remote.Helper;
-import tv.inair.airmote.remote.Proto;
 
-public class SocketClient {
-  private static final String HOST_NAME_KEY = "#hostname";
-  private static final String DISPLAY_NAME_KEY = "#displayname";
+public final class SocketClient {
 
   private static final String TAG = "SocketClient";
 
-  private final Handler mHandler = new Handler() {
+  //region Description
+  public static final String ACTION_USB_STATE = "android.hardware.usb.action.USB_STATE";
+  public static final String USB_CONNECTED = "connected";
+  public static final String USB_CONFIGURED = "configured";
+  public static final String USB_FUNCTION_MASS_STORAGE = "mass_storage";
+  public static final String USB_FUNCTION_ADB = "adb";
+  public static final String USB_FUNCTION_MTP = "mtp";
+
+  private boolean mUSBConnected = false;
+  private boolean mIsPC = false;
+  private final BroadcastReceiver receiver = new BroadcastReceiver() {
     @Override
-    public void handleMessage(Message msg) {
-      switch (msg.what) {
-        case Constants.MESSAGE_STATE_CHANGE:
-          switch (msg.arg1) {
-            case BTAdapter.STATE_CONNECTED:
-              System.out.println("SocketClient.handleMessage SAVED");
-              Application.getTempPreferences()
-                  .edit()
-                  .putString(HOST_NAME_KEY, mHostName)
-                  .putString(DISPLAY_NAME_KEY, mDisplayName)
-                  .commit();
+    public void onReceive(Context context, Intent intent) {
+      String action = intent.getAction();
+      switch (action) {
+        case Intent.ACTION_POWER_CONNECTED: {
+          mUSBConnected = true;
+          Application.notify(context, "USB Connected");
+          //          Toast.makeText(context, "USB Connected", Toast.LENGTH_SHORT).show();
+          quickScanAndConnect();
+          break;
+        }
 
-//              Application.getSettingsPreferences()
-//                  .edit()
-//                  .putString(HOST_NAME_KEY, mHostName)
-//                  .putString(DISPLAY_NAME_KEY, mDisplayName)
-//                  .commit();
+        case Intent.ACTION_POWER_DISCONNECTED:
+          mUSBConnected = false;
+          onStateChanged(false, "STOP_SETUP");
+          stopScanAndQuickConnect();
+          break;
 
-              onStateChanged(true, mDisplayName);
-              break;
-            case BTAdapter.STATE_NONE:
-              onStateChanged(false, mDisplayName);
-              break;
-          }
+        case Intent.ACTION_BATTERY_CHANGED: {
+          mIsPC = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) == BatteryManager.BATTERY_PLUGGED_USB;
+          quickScanAndConnect();
           break;
-        case Constants.MESSAGE_READ:
-          Proto.Event event = Helper.parseFrom((byte[]) msg.obj);
-          onEventReceived(event);
-          break;
-        case Constants.MESSAGE_DEVICE_NAME:
-          // save the connected device's name
-          mDisplayName = msg.getData().getString(Constants.DEVICE_NAME);
-          break;
+        }
+
+        //        case ACTION_USB_STATE: {
+        //          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
+        //          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
+        //          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
+        //          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
+        //          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
+        //          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
+        //          System.out.println(des);
+        //        }
       }
     }
   };
 
-  private List<WeakReference<OnEventReceived>> mEventReceiveds = new ArrayList<>();
-  private List<WeakReference<OnSocketStateChanged>> mStateChangeds = new ArrayList<>();
+  private boolean mSettingUp = false;
 
-  private String mDisplayName;
-  private String mHostName;
+  private void quickScanAndConnect() {
+    if (!mIsPC || !mUSBConnected || !mSettingUp) {
+      return;
+    }
+    Application.notify(activity.get(), "Connecting ...");
+    mConnection.startQuickConnect();
+  }
 
-  private BTAdapter mBtAdapter = BTAdapter.getInstance();
+  private void stopScanAndQuickConnect() {
+    Application.notify(activity.get(), "No device connect");
+    mConnection.stopQuickConnect();
+  }
+
+  public synchronized void changeToSettingMode(boolean setup) {
+    mSettingUp = setup;
+    if (!setup) {
+      stopScanAndQuickConnect();
+    } else {
+      mConnection.startQuickConnect();
+    }
+  }
+
+  public boolean isInSettingMode() {
+    return mSettingUp;
+  }
+
+  private WeakReference<Activity> activity;
+  private Context context;
+
+  public void register(Activity context) {
+    activity = new WeakReference<>(context);
+
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(Intent.ACTION_POWER_CONNECTED);
+    filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+    filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+    //    filter.addAction(ACTION_USB_STATE);
+    context.registerReceiver(receiver, filter);
+
+    mConnection.register(context);
+  }
+
+  public void unregister() {
+    if (activity != null && activity.get() != null) {
+      Activity f = activity.get();
+      mConnection.unregister(f);
+      f.unregisterReceiver(receiver);
+      mConnection.unregister(f);
+      activity = null;
+    }
+  }
+  //endregion
+
+  //region Public
+  private BaseConnection mConnection;
+  private BaseConnection.Device mDevice = BaseConnection.Device.EMPTY;
 
   public SocketClient() {
-    mBtAdapter.setHandler(mHandler);
+    mConnection = WifiAdapter.getInstance();
+    mConnection.setHandler(new LocalHandler(this));
+  }
+
+  public void startScanInAir(BaseConnection.DeviceFoundListener listener) {
+    mConnection.registerDeviceFoundListener(listener);
+    mConnection.startScan();
+  }
+
+  public void stopScanInAir() {
+    mConnection.registerDeviceFoundListener(null);
+    mConnection.stopScan();
   }
 
   public String getDisplayName() {
-    return mDisplayName;
+    return mDevice.deviceName;
   }
 
-  public void addEventReceivedListener(OnEventReceived listener) {
-    mEventReceiveds.add(new WeakReference<>(listener));
-  }
-
-  public void addSocketStateChangedListener(OnSocketStateChanged listener) {
-    mStateChangeds.add(new WeakReference<>(listener));
-  }
-
-//  public void removeEventReceivedListener(OnEventReceived listener) {
-//    Iterator<WeakReference<OnEventReceived>> it = mEventReceiveds.iterator();
-//    while (it.hasNext()) {
-//      WeakReference<OnEventReceived> l = it.next();
-//      if (l.get() == listener) {
-//        it.remove();
-//        return;
-//      }
-//    }
-//  }
-//
-//  public void removeSocketStateChangedListener(OnSocketStateChanged listener) {
-//    mStateChangeds.add(new WeakReference<>(listener));
-//  }
-
-  public boolean isConnected() {
-    return mBtAdapter.isConnected();
-  }
-
-  private void notifyDisconnect(String message) {
-    disconnect();
-    onStateChanged(false, message);
+  public boolean reconnectToLastHost() {
+    BaseConnection.Device device = BaseConnection.Device.getFromPref(Application.getTempPreferences());
+    return device.address != null && connectTo(device);
   }
 
   public boolean reconnectToLastDevice() {
-    if (!Application.getSettingsPreferences().contains(HOST_NAME_KEY)) {
-      return false;
-    }
-    String lastHost = Application.getSettingsPreferences().getString(HOST_NAME_KEY, "");
-    mDisplayName = Application.getSettingsPreferences().getString(DISPLAY_NAME_KEY, "");
-    return connectTo(lastHost);
-//    return false;
+    BaseConnection.Device device = BaseConnection.Device.getFromPref(Application.getSettingsPreferences());
+    return device.address != null && connectTo(device);
+
   }
 
-  public void reconnectToLastHost() {
-    if (!Application.getTempPreferences().contains(HOST_NAME_KEY)) {
-      return;
-    }
-    String lastHost = Application.getTempPreferences().getString(HOST_NAME_KEY, "");
-    mDisplayName = Application.getTempPreferences().getString(DISPLAY_NAME_KEY, "");
-    connectTo(lastHost);
+  public boolean connectTo(BaseConnection.Device device) {
+    Log.d(TAG, "ConnectTo " + device.address + " " + device.deviceName);
+    Application.notify(activity.get(), "Connecting ...");
+    mDevice = device;
+    return mConnection.connect(device);
   }
 
-  public boolean connectTo(String hostName) {
-    Log.d(TAG, "ConnectTo " + hostName + " " + mDisplayName);
-    mHostName = hostName;
-    return mBtAdapter.connect(hostName);
+  public boolean isConnected() {
+    return mConnection.isConnected();
   }
 
   public void disconnect() {
     if (!isConnected()) {
       return;
     }
-    mDisplayName = mHostName = null;
-    mBtAdapter.stop();
-    Log.d(TAG, "disconnect");
+    mDevice = BaseConnection.Device.EMPTY;
+    mConnection.stop();
+    Log.d(TAG, "Disconnect");
   }
 
   public void sendEvent(Proto.Event e) {
     if (!isConnected()) {
-      notifyDisconnect(null);
       return;
     }
     byte[] data = Helper.dataFromEvent(e);
-    mBtAdapter.write(data);
+    mConnection.write(data);
+  }
+  //endregion
+
+  //region EventListener
+  private List<WeakReference<OnEventReceived>> mEventReceived = new ArrayList<>();
+  private List<WeakReference<OnSocketStateChanged>> mStateChanged = new ArrayList<>();
+
+  public void addEventReceivedListener(OnEventReceived listener) {
+    mEventReceived.add(new WeakReference<>(listener));
+  }
+
+  public void addSocketStateChangedListener(OnSocketStateChanged listener) {
+    mStateChanged.add(new WeakReference<>(listener));
   }
 
   private synchronized void onEventReceived(Proto.Event e) {
-    Iterator<WeakReference<OnEventReceived>> it = mEventReceiveds.iterator();
+    Iterator<WeakReference<OnEventReceived>> it = mEventReceived.iterator();
     while (it.hasNext()) {
       WeakReference<OnEventReceived> l = it.next();
       if (l.get() != null) {
@@ -162,13 +214,67 @@ public class SocketClient {
   }
 
   private synchronized void onStateChanged(boolean connect, String message) {
-    Iterator<WeakReference<OnSocketStateChanged>> it = mStateChangeds.iterator();
+    Iterator<WeakReference<OnSocketStateChanged>> it = mStateChanged.iterator();
     while (it.hasNext()) {
       WeakReference<OnSocketStateChanged> l = it.next();
       if (l.get() != null) {
         l.get().onStateChanged(connect, message);
       } else {
         it.remove();
+      }
+    }
+  }
+  //endregion
+
+  private void handleStateChange(int state) {
+    switch (state) {
+      case BaseConnection.STATE_CONNECTED:
+        // BaseConnection.Device.saveToPref(Application.getTempPreferences(), mDevice);
+        // BaseConnection.Device.saveToPref(Application.getSettingsPreferences(), mDevice);
+        onStateChanged(true, mDevice.deviceName);
+        Application.notify(activity.get(), "Connected to " + mDevice.deviceName);
+        break;
+
+      case BaseConnection.STATE_NONE:
+        onStateChanged(false, mDevice.deviceName);
+        Application.notify(activity.get(), "Disconnected");
+        break;
+    }
+  }
+
+  private void updateDeviceName(String name) {
+    mDevice.deviceName = name;
+  }
+
+  private static class LocalHandler extends Handler {
+    WeakReference<SocketClient> mClient;
+
+    LocalHandler(SocketClient client) {
+      mClient = new WeakReference<>(client);
+    }
+
+    @Override
+    public void handleMessage(Message msg) {
+      SocketClient client = mClient.get();
+      if (client == null) {
+        return;
+      }
+      switch (msg.what) {
+        case BaseConnection.Constants.MESSAGE_STATE_CHANGE:
+          client.handleStateChange(msg.arg1);
+          break;
+
+        case BaseConnection.Constants.MESSAGE_READ:
+          client.onEventReceived(Helper.parseFrom((byte[]) msg.obj));
+          break;
+
+        case BaseConnection.Constants.MESSAGE_DEVICE_NAME:
+          // save the connected device's name
+          client.updateDeviceName(msg.getData().getString(BaseConnection.Constants.DEVICE_NAME));
+          break;
+
+        default:
+          super.handleMessage(msg);
       }
     }
   }

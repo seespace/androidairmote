@@ -1,5 +1,6 @@
 package tv.inair.airmote;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -12,7 +13,7 @@ import android.webkit.WebViewClient;
 
 import java.util.Set;
 
-import tv.inair.airmote.remote.Helper;
+import inair.eventcenter.proto.Helper;
 
 public class WebviewActivity extends Activity {
 
@@ -30,11 +31,16 @@ public class WebviewActivity extends Activity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    getWindow().requestFeature(Window.FEATURE_PROGRESS);
+
+    ActionBar actionBar = getActionBar();
+    if (actionBar != null) {
+      actionBar.setDisplayHomeAsUpEnabled(true);
+    }
+
     Intent i = getIntent();
     url = i.getStringExtra(EXTRA_URL);
     replyTo = i.getStringExtra(EXTRA_REPLY_TO);
-
-    getWindow().requestFeature(Window.FEATURE_PROGRESS);
 
     webView = new WebView(this);
     setContentView(webView);

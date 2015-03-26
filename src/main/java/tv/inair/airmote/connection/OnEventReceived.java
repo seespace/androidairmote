@@ -1,6 +1,6 @@
 package tv.inair.airmote.connection;
 
-import tv.inair.airmote.remote.Proto;
+import inair.eventcenter.proto.Proto;
 
 /**
  * <p>

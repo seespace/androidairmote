@@ -39,10 +39,13 @@ public class MainActivity extends FragmentActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+    Application.getSocketClient().register(this);
+
     if (savedInstanceState == null) {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
       if (fragment == null) {
         fragment = new MainFragment();
+        fragment.setRetainInstance(true);
       }
       transaction.replace(R.id.fragment, fragment);
       transaction.commit();
@@ -54,5 +57,12 @@ public class MainActivity extends FragmentActivity {
     if (!fragment.onBackPressed()) {
       super.onBackPressed();
     }
+  }
+
+  @Override
+  protected void onDestroy() {
+    Application.getSocketClient().unregister();
+    Application.notify(this, null);
+    super.onDestroy();
   }
 }
