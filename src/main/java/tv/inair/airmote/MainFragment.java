@@ -9,8 +9,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
-import android.widget.Toast;
 
+import inair.eventcenter.proto.Helper;
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.OnSocketStateChanged;
@@ -50,9 +50,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     mClient.addEventReceivedListener(this);
     mClient.addSocketStateChangedListener(this);
 
-//    if (!mClient.isConnected()) {
-//      mClient.reconnectToLastDevice();
-//    }
+    //    if (!mClient.isConnected()) {
+    //      mClient.reconnectToLastDevice();
+    //    }
   }
 
   @Override
@@ -163,7 +163,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
       case REQUEST_SCAN_INAIR:
         if (resultCode == Activity.RESULT_OK) {
-          
+
         }
         break;
     }
@@ -206,7 +206,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   }
 
   private void switchDisplayMode() {
-    Toast.makeText(getActivity(), "Not implemented yet", Toast.LENGTH_SHORT).show();
+    mClient.sendEvent(Helper.newFunctionEvent(Proto.FunctionEvent.F4));
   }
 
   private void settingDevice() {

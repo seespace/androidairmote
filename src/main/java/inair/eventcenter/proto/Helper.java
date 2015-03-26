@@ -19,28 +19,17 @@ import java.util.List;
 /**
  * Copyright (c) 2014 SeeSpace.co. All rights reserved.
  */
-public class Helper {
-  //region Singleton
-  private static Helper ourInstance = new Helper();
-
-  public static Helper getInstance() {
-    return ourInstance;
-  }
-
-  private Helper() {
-  }
-  //endregion
+public final class Helper {
 
   //region Helper methods
   public static Proto.Event parseFrom(byte[] data) {
-    Proto.Event event = null;
     try {
       return Proto.Event.parseFrom(data);
     } catch (InvalidProtocolBufferNanoException e) {
       e.printStackTrace();
     }
 
-    return event;
+    return null;
   }
 
   public static long now() {
@@ -366,7 +355,7 @@ public class Helper {
   public static Proto.Event setupWifiScanRequest() {
     Proto.SetupRequestEvent event = new Proto.SetupRequestEvent();
     event.phase = Proto.REQUEST_WIFI_SCAN;
-    return buildEvent(0, 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
   }
 
   public static Proto.Event setupWifiConnectRequestWithSSID(String ssid, String password) {
@@ -374,7 +363,13 @@ public class Helper {
     event.phase = Proto.REQUEST_WIFI_CONNECT;
     event.ssid = ssid;
     event.password = password;
-    return buildEvent(0, 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
+    return buildEvent(now(), 0, 0, Proto.Event.SETUP_REQUEST, null, null).setExtension(Proto.SetupRequestEvent.event, event);
   }
   //endregion
+
+  public static Proto.Event newFunctionEvent(int key) {
+    Proto.FunctionEvent event = new Proto.FunctionEvent();
+    event.key = key;
+    return buildEvent(now(), 0, 0, Proto.Event.FUNCTION_EVENT, null, null).setExtension(Proto.FunctionEvent.event, event);
+  }
 }
