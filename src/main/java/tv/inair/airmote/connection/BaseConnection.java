@@ -136,7 +136,7 @@ public abstract class BaseConnection {
 
   public abstract boolean stopQuickConnect();
 
-  public abstract void startScan();
+  public abstract void startScan(boolean quickConnect);
 
   public abstract void stopScan();
 

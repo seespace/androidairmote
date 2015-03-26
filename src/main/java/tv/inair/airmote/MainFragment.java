@@ -32,6 +32,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   public static final int REQUEST_WIFI_SETUP = 1;
   public static final int REQUEST_SCAN_INAIR = 2;
+  public static final int REQUEST_TEXT_INPUT = 3;
 
   private GestureControl mGestureControl;
   private View mRootView;
@@ -216,16 +217,30 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   //endregion
 
   //region Implement
-  private void processOAuth(Proto.Event event) {
-    Proto.OAuthRequestEvent oAuthEvent = event.getExtension(Proto.OAuthRequestEvent.event);
-    assert oAuthEvent != null;
-    Intent i = new Intent(getActivity(), WebviewActivity.class);
-    i.putExtra(WebviewActivity.EXTRA_URL, oAuthEvent.authUrl);
-    i.putExtra(WebviewActivity.EXTRA_REPLY_TO, event.replyTo);
-    startActivity(i);
+  private void processTextInput(Proto.Event event) {
+    Proto.TextInputRequestEvent textInputEvent = event.getExtension(Proto.TextInputRequestEvent.event);
+    assert textInputEvent != null;
+    Intent i = new Intent(getActivity(), TextInputActivity.class);
+    i.putExtra(TextInputActivity.EXTRA_REPLY_TO, event.replyTo);
+    i.putExtra(TextInputActivity.EXTRA_MAX_LENGTH, textInputEvent.maxLength);
+    startActivityForResult(i, REQUEST_TEXT_INPUT);
   }
 
-  private void processTextInput(Proto.Event event) {
+  private void processWebView(Proto.Event event, boolean isWebView) {
+    Intent i = new Intent(getActivity(), WebViewActivity.class);
+    i.putExtra(WebViewActivity.EXTRA_REPLY_TO, event.replyTo);
+
+    if (isWebView) {
+      Proto.WebViewRequestEvent webViewEvent = event.getExtension(Proto.WebViewRequestEvent.event);
+      assert webViewEvent != null;
+      i.putExtra(WebViewActivity.EXTRA_URL, webViewEvent.url);
+    } else {
+      Proto.OAuthRequestEvent oAuthEvent = event.getExtension(Proto.OAuthRequestEvent.event);
+      assert oAuthEvent != null;
+      i.putExtra(WebViewActivity.EXTRA_URL, oAuthEvent.authUrl);
+    }
+
+    startActivity(i);
   }
 
   @Override
@@ -235,8 +250,12 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     }
     if (event != null && event.type != null) {
       switch (event.type) {
+        case Proto.Event.WEBVIEW_REQUEST:
+          processWebView(event, true);
+          break;
+
         case Proto.Event.OAUTH_REQUEST:
-          processOAuth(event);
+          processWebView(event, false);
           break;
 
         case Proto.Event.TEXT_INPUT_REQUEST:

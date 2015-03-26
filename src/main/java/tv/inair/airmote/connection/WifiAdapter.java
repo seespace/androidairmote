@@ -7,7 +7,7 @@ import android.content.IntentFilter;
 import android.net.NetworkInfo;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
-import android.net.wifi.SupplicantState;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -61,36 +61,36 @@ public final class WifiAdapter extends BaseConnection {
   private static final String INAIR_SSID = String.format("\"%s\"", "InAiR");
   private static final String INAIR_PASSWORD = String.format("\"%s\"", "12345678");
 
-  private static final Device INAIR_DEVICE = new Device("inAiR", "192.168.49.1");
+  private static final Device INAIR_DEVICE = new Device("InAiR", "192.168.49.1");
   private static final int INAIR_PORT = 8989;
 
   private ConnectThread mConnectThread;
   private ConnectedThread mConnectedThread;
 
   private WifiManager mManager;
-
   private NSDHelper mNsdHelper;
+
+  private SocketClient mClient;
 
   private void _connectToInAiR() {
     if (!mManager.isWifiEnabled()) {
       mManager.setWifiEnabled(true);
     }
-    int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
-    mManager.disconnect();
-    mManager.enableNetwork(netId, true);
-    mManager.reconnect();
+    mSetupInAiR = true;
+    mManager.startScan();
   }
 
   private void _disableInAirNetwork() {
     if (!mManager.isWifiEnabled()) {
       mManager.setWifiEnabled(true);
     }
+    mSetupInAiR = false;
     List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
     if (configs != null) {
       for (int i = 0; i < configs.size(); i++) {
         WifiConfiguration config = configs.get(i);
         if (_checkIfInAiR(config.SSID)) {
-          mManager.removeNetwork(config.networkId);
+          mManager.disableNetwork(config.networkId);
         }
       }
     }
@@ -106,27 +106,39 @@ public final class WifiAdapter extends BaseConnection {
       String action = intent.getAction();
 
       switch (action) {
+        case WifiManager.SCAN_RESULTS_AVAILABLE_ACTION:
+          System.out.println("SCAN_RESULTS_AVAILABLE_ACTION " + mSetupInAiR);
+          if (mSetupInAiR) {
+            List<ScanResult> results = mManager.getScanResults();
+            for (ScanResult res : results) {
+              if (_checkIfInAiR("\"" + res.SSID + "\"")) {
+                mSetupInAiR = false;
+                int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
+                mManager.disconnect();
+                mManager.enableNetwork(netId, true);
+                mManager.reconnect();
+              }
+            }
+          }
+          break;
+
         case WifiManager.NETWORK_STATE_CHANGED_ACTION:
           NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
           if (networkInfo.isConnected()) {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-            if (Application.getSocketClient().isInSettingMode()) {
+            System.out.println("NETWORK_STATE_CHANGED_ACTION " + mClient.isInSettingMode() + " " + mQuickConnect);
+            if (mClient.isInSettingMode()) {
               if (_checkIfInAiR(wifiInfo.getSSID())) {
                 connect(INAIR_DEVICE);
               } else {
                 _connectToInAiR();
               }
-            } else {
-              //mNsdHelper.startDiscover();
+            } else if (mQuickConnect) {
+              mNsdHelper.startDiscover();
             }
           } else {
             stop();
           }
-          break;
-
-        case WifiManager.SUPPLICANT_STATE_CHANGED_ACTION:
-          SupplicantState state = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
-          System.out.println("State " + state);
           break;
       }
     }
@@ -167,37 +179,48 @@ public final class WifiAdapter extends BaseConnection {
   //region Implement
   @Override
   public void register(Context context) {
+    mClient = Application.getSocketClient();
     mNsdHelper.registerListener(context);
     mManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
     IntentFilter filter = new IntentFilter();
+    filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
     filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
-    filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
     context.registerReceiver(mReceiver, filter);
   }
 
   @Override
   public void unregister(Context context) {
     mNsdHelper.unregisterListener(context);
-    context.unregisterReceiver(mReceiver);
+    try {
+      context.unregisterReceiver(mReceiver);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
+
+  private boolean mQuickConnect = false;
+  private boolean mSetupInAiR = false;
 
   @Override
   public boolean startQuickConnect() {
-    _connectToInAiR();
+    if (mClient.isInSettingMode()) {
+      _connectToInAiR();
+    } else {
+      mQuickConnect = true;
+    }
     return true;
   }
 
   @Override
   public boolean stopQuickConnect() {
     _disableInAirNetwork();
-    mManager.setWifiEnabled(false);
-    mManager.setWifiEnabled(true);
     return true;
   }
 
   @Override
-  public void startScan() {
+  public void startScan(boolean quickConnect) {
+    mQuickConnect = quickConnect;
     mNsdHelper.startDiscover();
   }
 
@@ -232,6 +255,8 @@ public final class WifiAdapter extends BaseConnection {
     ins.mManager.disconnect();
     ins.mManager.enableNetwork(netId, false);
     ins.mManager.reconnect();
+
+    getInstance().startQuickConnect();
   }
 
   @Override
@@ -244,8 +269,6 @@ public final class WifiAdapter extends BaseConnection {
       mNsdHelper.resolveAndConnectDevice(device);
       return false;
     }
-
-    System.out.println("WifiAdapter.connect " + device);
 
     if (mConnectThread != null) {
       mConnectThread.cancel();
@@ -265,8 +288,6 @@ public final class WifiAdapter extends BaseConnection {
 
   @Override
   public void stop() {
-    Log.d(TAG, "Stop");
-
     if (mConnectThread != null) {
       mConnectThread.cancel();
       mConnectThread = null;
@@ -410,10 +431,9 @@ public final class WifiAdapter extends BaseConnection {
   }
   //endregion
 
-  private class NSDHelper implements NsdManager.RegistrationListener {
+  private class NSDHelper {
 
     private static final String TAG = "NsdHelper";
-    private static final String SERVICE_NAME = "NsdAiRMote";
     private static final String SERVICE_TYPE = "_irpc._tcp.";
 
     private NsdManager mNsdManager;
@@ -423,20 +443,11 @@ public final class WifiAdapter extends BaseConnection {
 
     public void registerListener(Context context) {
       mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
-
-      NsdServiceInfo serviceInfo = new NsdServiceInfo();
-      serviceInfo.setPort(INAIR_PORT);
-      serviceInfo.setServiceName(SERVICE_NAME);
-      serviceInfo.setServiceType(SERVICE_TYPE);
-      mNsdManager.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, this);
-
-      System.out.println("NSDHelper.registerListener");
     }
 
     public void unregisterListener(Context context) {
       if (mNsdManager != null) {
         stopDiscover();
-        mNsdManager.unregisterService(this);
         mNsdManager = null;
       }
     }
@@ -478,14 +489,13 @@ public final class WifiAdapter extends BaseConnection {
       @Override
       public void onServiceFound(NsdServiceInfo service) {
         Log.d(TAG, "Service discovery success " + service);
-        String name = service.getServiceName();
-        if (name.contains(SERVICE_NAME)) {
-          Log.d(TAG, "Same IP.");
-          return;
-        }
         Device device = new Device(service.getServiceName(), null);
         device.parcelable = service;
-        onDeviceFound(device);
+        if (mQuickConnect) {
+          resolveAndConnectDevice(device);
+        } else {
+          onDeviceFound(device);
+        }
       }
 
       @Override
@@ -534,28 +544,6 @@ public final class WifiAdapter extends BaseConnection {
           }
         });
       }
-    }
-    //endregion
-
-    //region NsdManager.RegistrationListener
-    @Override
-    public void onServiceRegistered(NsdServiceInfo serviceInfo) {
-      System.out.println("NSDHelper.onServiceRegistered " + serviceInfo.getServiceName());
-    }
-
-    @Override
-    public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
-      System.out.println("NSDHelper.onRegistrationFailed " + serviceInfo.getServiceName() + " " + errorCode);
-    }
-
-    @Override
-    public void onServiceUnregistered(NsdServiceInfo serviceInfo) {
-      System.out.println("NSDHelper.onServiceUnregistered " + serviceInfo.getServiceName());
-    }
-
-    @Override
-    public void onUnregistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
-      System.out.println("NSDHelper.onUnregistrationFailed " + serviceInfo.getServiceName() + " " + errorCode);
     }
     //endregion
   }

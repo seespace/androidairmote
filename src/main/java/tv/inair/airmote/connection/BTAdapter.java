@@ -133,7 +133,7 @@ public final class BTAdapter extends BaseConnection {
   }
 
   @Override
-  public void startScan() {
+  public void startScan(boolean quickConnect) {
 
   }
 

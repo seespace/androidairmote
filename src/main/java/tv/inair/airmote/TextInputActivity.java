@@ -1,0 +1,75 @@
+package tv.inair.airmote;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.EditText;
+
+import inair.eventcenter.proto.Helper;
+import inair.eventcenter.proto.Proto;
+import tv.inair.airmote.connection.SocketClient;
+
+public class TextInputActivity extends Activity implements TextWatcher {
+
+  public static final String EXTRA_REPLY_TO = "extra_reply_to";
+  public static final String EXTRA_MAX_LENGTH = "extra_max_length";
+
+  private String replyTo;
+  private SocketClient mClient;
+  private EditText editText;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    Intent i = getIntent();
+    replyTo = i.getStringExtra(EXTRA_REPLY_TO);
+
+    int maxLength = i.getIntExtra(EXTRA_MAX_LENGTH, Integer.MAX_VALUE);
+
+    InputFilter[] filterArray = new InputFilter[1];
+    filterArray[0] = new InputFilter.LengthFilter(maxLength);
+
+    mClient = Application.getSocketClient();
+
+    setContentView(R.layout.activity_text_input);
+
+    setResult(Activity.RESULT_CANCELED);
+
+    editText = ((EditText) findViewById(R.id.inputText));
+    editText.addTextChangedListener(this);
+    editText.setFilters(filterArray);
+  }
+
+  public void onOkButtonClicked(View view) {
+    Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), Proto.TextInputResponseEvent.ENDED);
+    mClient.sendEvent(event);
+    finish();
+  }
+
+  public void onCancelButtonClicked(View view) {
+    Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), Proto.TextInputResponseEvent.CANCELLED);
+    mClient.sendEvent(event);
+    finish();
+  }
+
+  //region Implement TextWatcher
+  @Override
+  public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+  }
+
+  @Override
+  public void onTextChanged(CharSequence s, int start, int before, int count) {
+    Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), Proto.TextInputResponseEvent.CHANGED);
+    mClient.sendEvent(event);
+  }
+
+  @Override
+  public void afterTextChanged(Editable s) {
+  }
+  //endregion
+}

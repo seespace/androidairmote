@@ -9,5 +9,9 @@
   <string name="connectTxt">Connect</string>
   <string name="pwdTxt">Password</string>
   <string name="connectDesTxt">Connect to</string>
+  <string name="ok_btn">Ok</string>
+  <string name="cancel_btn">Cancel</string>
+  <string name="title_activity_text_input">TextInputActivity</string>
+  <string name="action_settings">Settings</string>
 
 </resources>

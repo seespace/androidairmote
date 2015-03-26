@@ -100,20 +100,19 @@ public final class Helper {
       device.version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionCode;
     } catch (PackageManager.NameNotFoundException e) {
       e.printStackTrace();
+      device.version = 1;
     }
     device.hasKeyboard = true;
 
     return device;
   }
 
-  public static Proto.Event newDeviceEvent(Context context, long timestamp, int type, boolean error, String reason) {
+  public static Proto.Event newDeviceEvent(Context context, int type) {
     Proto.DeviceEvent event = new Proto.DeviceEvent();
     event.device = currentDevice(context);
     event.type = type;
-    event.error = error;
-    event.reason = reason;
 
-    return buildEvent(timestamp, 0, 0, Proto.Event.DEVICE, null, null)
+    return buildEvent(now(), 0, 0, Proto.Event.DEVICE, null, null)
         .setExtension(Proto.DeviceEvent.event, event);
   }
 
@@ -242,6 +241,13 @@ public final class Helper {
 
     return buildEvent(now(), 0, 0, Proto.Event.TEXT_INPUT_REQUEST, null, null)
         .setExtension(Proto.TextInputRequestEvent.event, event);
+  }
+
+  public static Proto.Event newTextInputResponseEvent(CharSequence text, int state) {
+    Proto.TextInputResponseEvent event = new Proto.TextInputResponseEvent();
+    event.text = text.toString();
+    event.state = state;
+    return buildEvent(now(), 0, 0, Proto.Event.TEXT_INPUT_RESPONSE, null, null).setExtension(Proto.TextInputResponseEvent.event, event);
   }
   //endregion
 

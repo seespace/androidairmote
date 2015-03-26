@@ -54,7 +54,7 @@ public class MainActivity extends FragmentActivity {
 
   @Override
   public void onBackPressed() {
-    if (!fragment.onBackPressed()) {
+    if (fragment != null && !fragment.onBackPressed()) {
       super.onBackPressed();
     }
   }

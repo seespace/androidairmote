@@ -24,13 +24,6 @@ public final class SocketClient {
   private static final String TAG = "SocketClient";
 
   //region Description
-  public static final String ACTION_USB_STATE = "android.hardware.usb.action.USB_STATE";
-  public static final String USB_CONNECTED = "connected";
-  public static final String USB_CONFIGURED = "configured";
-  public static final String USB_FUNCTION_MASS_STORAGE = "mass_storage";
-  public static final String USB_FUNCTION_ADB = "adb";
-  public static final String USB_FUNCTION_MTP = "mtp";
-
   private boolean mUSBConnected = false;
   private boolean mIsPC = false;
   private final BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -41,7 +34,6 @@ public final class SocketClient {
         case Intent.ACTION_POWER_CONNECTED: {
           mUSBConnected = true;
           Application.notify(context, "USB Connected");
-          //          Toast.makeText(context, "USB Connected", Toast.LENGTH_SHORT).show();
           quickScanAndConnect();
           break;
         }
@@ -57,16 +49,6 @@ public final class SocketClient {
           quickScanAndConnect();
           break;
         }
-
-        //        case ACTION_USB_STATE: {
-        //          boolean isConnected = intent.getBooleanExtra(USB_CONNECTED, false);
-        //          boolean isConfigured = intent.getBooleanExtra(USB_CONFIGURED, false);
-        //          boolean msName = intent.getBooleanExtra(USB_FUNCTION_MASS_STORAGE, false);
-        //          boolean adbName = intent.getBooleanExtra(USB_FUNCTION_ADB, false);
-        //          boolean mtpName = intent.getBooleanExtra(USB_FUNCTION_MTP, false);
-        //          String des = ACTION_USB_STATE + " " + isConnected + " " + isConfigured + " " + msName + " " + adbName + " " + mtpName;
-        //          System.out.println(des);
-        //        }
       }
     }
   };
@@ -82,8 +64,10 @@ public final class SocketClient {
   }
 
   private void stopScanAndQuickConnect() {
-    Application.notify(activity.get(), "No device connect");
-    mConnection.stopQuickConnect();
+    if (mSettingUp) {
+      Application.notify(activity.get(), "No device connect");
+      mConnection.stopQuickConnect();
+    }
   }
 
   public synchronized void changeToSettingMode(boolean setup) {
@@ -100,7 +84,6 @@ public final class SocketClient {
   }
 
   private WeakReference<Activity> activity;
-  private Context context;
 
   public void register(Activity context) {
     activity = new WeakReference<>(context);
@@ -120,7 +103,6 @@ public final class SocketClient {
       Activity f = activity.get();
       mConnection.unregister(f);
       f.unregisterReceiver(receiver);
-      mConnection.unregister(f);
       activity = null;
     }
   }
@@ -137,7 +119,7 @@ public final class SocketClient {
 
   public void startScanInAir(BaseConnection.DeviceFoundListener listener) {
     mConnection.registerDeviceFoundListener(listener);
-    mConnection.startScan();
+    mConnection.startScan(false);
   }
 
   public void stopScanInAir() {
@@ -231,6 +213,7 @@ public final class SocketClient {
       case BaseConnection.STATE_CONNECTED:
         // BaseConnection.Device.saveToPref(Application.getTempPreferences(), mDevice);
         // BaseConnection.Device.saveToPref(Application.getSettingsPreferences(), mDevice);
+        sendEvent(Helper.newDeviceEvent(activity.get(), Proto.DeviceEvent.REGISTER));
         onStateChanged(true, mDevice.deviceName);
         Application.notify(activity.get(), "Connected to " + mDevice.deviceName);
         break;

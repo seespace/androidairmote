@@ -1,5 +1,9 @@
 <resources>
 
+  <style name="AppStyle" parent="@android:style/Theme.Holo.Light.NoActionBar"/>
+  <style name="ActivityStyle" parent="@android:style/Theme.Holo.Light"/>
+  <style name="DialogStyle" parent="@android:style/Theme.Holo.Light.Dialog"/>
+
   <style name="Button">
     <item name="android:background">@drawable/btn_state</item>
     <item name="android:focusable">true</item>
