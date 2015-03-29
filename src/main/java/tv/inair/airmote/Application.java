@@ -6,6 +6,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.v4.app.NotificationCompat;
 
+import com.crashlytics.android.Crashlytics;
+
+import io.fabric.sdk.android.Fabric;
 import tv.inair.airmote.connection.SocketClient;
 
 /**
@@ -62,6 +65,7 @@ public class Application extends android.app.Application {
 
   @Override
   public void onCreate() {
+    Fabric.with(this, new Crashlytics());
     mSocketClient = new SocketClient();
     // Clear temporary preferences
     mTempPreferences = getSharedPreferences(TEMP, Context.MODE_PRIVATE);
