@@ -107,7 +107,7 @@ public final class WifiAdapter extends BaseConnection {
 
       switch (action) {
         case WifiManager.SCAN_RESULTS_AVAILABLE_ACTION:
-          System.out.println("SCAN_RESULTS_AVAILABLE_ACTION " + mSetupInAiR);
+          Log.d(TAG, "SCAN_RESULTS_AVAILABLE_ACTION " + mSetupInAiR);
           if (mSetupInAiR) {
             List<ScanResult> results = mManager.getScanResults();
             for (ScanResult res : results) {
@@ -126,7 +126,7 @@ public final class WifiAdapter extends BaseConnection {
           NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
           if (networkInfo.isConnected()) {
             WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-            System.out.println("NETWORK_STATE_CHANGED_ACTION " + mClient.isInSettingMode() + " " + mQuickConnect);
+            Log.d(TAG, "NETWORK_STATE_CHANGED_ACTION " + mClient.isInSettingMode() + " " + mQuickConnect);
             if (mClient.isInSettingMode()) {
               if (_checkIfInAiR(wifiInfo.getSSID())) {
                 connect(INAIR_DEVICE);
@@ -385,7 +385,6 @@ public final class WifiAdapter extends BaseConnection {
       while (!isInterrupted()) {
         try {
           if (mDataIS.available() > 0) {
-            System.out.println("ConnectedThread.AVAILABLE " + mDataIS.available());
             length = mDataIS.readInt();
             mDataIS.readFully(buffer, 0, length);
 
@@ -422,7 +421,7 @@ public final class WifiAdapter extends BaseConnection {
     public void cancel() {
       try {
         interrupt();
-        System.out.println("ConnectedThread.cancel");
+        Log.d(TAG, "ConnectedThread.cancel");
         mmSocket.close();
       } catch (IOException e) {
         Log.e(TAG, "close() of connect socket failed", e);
@@ -492,6 +491,8 @@ public final class WifiAdapter extends BaseConnection {
         Device device = new Device(service.getServiceName(), null);
         device.parcelable = service;
         if (mQuickConnect) {
+          mQuickConnect = false;
+          stopDiscover();
           resolveAndConnectDevice(device);
         } else {
           onDeviceFound(device);

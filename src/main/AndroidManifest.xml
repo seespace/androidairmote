@@ -18,7 +18,8 @@
     <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
-        android:theme="@style/AppStyle">
+        android:theme="@style/AppStyle"
+        android:screenOrientation="portrait">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
 
@@ -30,7 +31,8 @@
     <activity
         android:name=".DeviceListActivity"
         android:parentActivityName=".MainActivity"
-        android:theme="@style/DialogStyle">
+        android:theme="@style/DialogStyle"
+        android:screenOrientation="portrait">
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"
           android:value=".MainActivity"/>
@@ -40,7 +42,8 @@
     <activity
         android:name=".WifiListActivity"
         android:parentActivityName=".MainActivity"
-        android:theme="@style/ActivityStyle">
+        android:theme="@style/ActivityStyle"
+        android:screenOrientation="portrait">
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"
           android:value=".MainActivity"/>
@@ -49,7 +52,8 @@
     <activity
         android:name=".WifiConnectActivity"
         android:parentActivityName=".WifiListActivity"
-        android:theme="@style/ActivityStyle">
+        android:theme="@style/ActivityStyle"
+        android:screenOrientation="portrait">
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"
           android:value=".WifiListActivity"/>
@@ -59,7 +63,8 @@
     <activity
         android:name=".WebViewActivity"
         android:parentActivityName=".MainActivity"
-        android:theme="@style/ActivityStyle">
+        android:theme="@style/ActivityStyle"
+        android:screenOrientation="portrait">
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"
           android:value=".MainActivity"/>
@@ -69,7 +74,8 @@
     <activity
         android:name=".TextInputActivity"
         android:theme="@style/DialogStyle"
-        android:parentActivityName=".MainActivity">
+        android:parentActivityName=".MainActivity"
+        android:screenOrientation="portrait">
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"
           android:value=".MainActivity"/>

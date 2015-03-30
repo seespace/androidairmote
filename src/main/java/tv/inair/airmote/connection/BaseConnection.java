@@ -64,7 +64,6 @@ public abstract class BaseConnection {
     // Message types sent from the BluetoothChatService Handler
     int MESSAGE_STATE_CHANGE = 1;
     int MESSAGE_READ = 2;
-    int MESSAGE_WRITE = 3;
     int MESSAGE_DEVICE_NAME = 4;
 
     // Key names received from the BluetoothChatService Handler
@@ -79,7 +78,8 @@ public abstract class BaseConnection {
   protected int mState = STATE_NONE;
 
   protected synchronized void setState(int state) {
-    mState = state; mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+    mState = state;
+    mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
   }
 
   /**
@@ -120,7 +120,6 @@ public abstract class BaseConnection {
     mHandler.post(new Runnable() {
       @Override
       public void run() {
-        System.out.println("device = [" + device + "]" + " " + mDeviceFoundListener.get());
         if (mDeviceFoundListener != null && mDeviceFoundListener.get() != null) {
           mDeviceFoundListener.get().onDeviceFound(device);
         }

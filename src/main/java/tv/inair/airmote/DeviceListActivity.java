@@ -78,7 +78,6 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
   @Override
   protected void onDestroy() {
     cancelDiscovery();
-    System.out.println("DeviceListActivity.onDestroy");
     super.onDestroy();
   }
 

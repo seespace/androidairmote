@@ -34,7 +34,6 @@ public final class BTAdapter extends BaseConnection {
   private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
   private static final int REQUEST_ENABLE_BT = 2;
 
-
   private static final String TAG = "BTAdapter";
 
   // Unique UUID for this application
@@ -55,7 +54,8 @@ public final class BTAdapter extends BaseConnection {
       if (INSECURE.equalsIgnoreCase(uuid.toString())) {
         return true;
       }
-    } return false;
+    }
+    return false;
   }
 
   //region Singleton
@@ -64,7 +64,8 @@ public final class BTAdapter extends BaseConnection {
   public static BTAdapter getInstance() {
     if (instance == null) {
       instance = new BTAdapter();
-    } return instance;
+    }
+    return instance;
   }
 
   private BTAdapter() {
@@ -87,17 +88,17 @@ public final class BTAdapter extends BaseConnection {
       // When discovery finds a device
       switch (action) {
         case BluetoothDevice.ACTION_FOUND:
-//          // Get the BluetoothDevice object from the Intent
-//          BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-//          if (device.getName() == null) {
-//            return;
-//          }
-//
-//          boolean hasInAiR = checkIfInAiR(device.getUuids()); boolean potentialInAiR = "inAiR".equals(device.getName());
-//          if (hasInAiR || potentialInAiR) {
-//            adapter.cancelDiscovery(); setState(STATE_CONNECTING);
-//            Application.getSocketClient().connectTo(device);
-//          }
+          //          // Get the BluetoothDevice object from the Intent
+          //          BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+          //          if (device.getName() == null) {
+          //            return;
+          //          }
+          //
+          //          boolean hasInAiR = checkIfInAiR(device.getUuids()); boolean potentialInAiR = "inAiR".equals(device.getName());
+          //          if (hasInAiR || potentialInAiR) {
+          //            adapter.cancelDiscovery(); setState(STATE_CONNECTING);
+          //            Application.getSocketClient().connectTo(device);
+          //          }
           break;
 
         case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
@@ -153,18 +154,23 @@ public final class BTAdapter extends BaseConnection {
     // Cancel any thread attempting to make a connection
     if (mState == STATE_CONNECTING) {
       if (mConnectThread != null) {
-        mConnectThread.cancel(); mConnectThread = null;
+        mConnectThread.cancel();
+        mConnectThread = null;
       }
     }
 
     // Cancel any thread currently running a connection
     if (mConnectedThread != null) {
-      mConnectedThread.cancel(); mConnectedThread = null;
+      mConnectedThread.cancel();
+      mConnectedThread = null;
     }
 
     // Start the thread to connect with the given device
-    BluetoothDevice bt = adapter.getRemoteDevice(device.address); mConnectThread = new ConnectThread(bt);
-    mConnectThread.start(); setState(STATE_CONNECTING); return true;
+    BluetoothDevice bt = adapter.getRemoteDevice(device.address);
+    mConnectThread = new ConnectThread(bt);
+    mConnectThread.start();
+    setState(STATE_CONNECTING);
+    return true;
   }
 
   @Override
@@ -180,11 +186,13 @@ public final class BTAdapter extends BaseConnection {
     }
 
     if (mConnectThread != null) {
-      mConnectThread.cancel(); mConnectThread = null;
+      mConnectThread.cancel();
+      mConnectThread = null;
     }
 
     if (mConnectedThread != null) {
-      mConnectedThread.cancel(); mConnectedThread = null;
+      mConnectedThread.cancel();
+      mConnectedThread = null;
     }
 
     setState(STATE_NONE);
@@ -198,7 +206,8 @@ public final class BTAdapter extends BaseConnection {
     synchronized (this) {
       if (mState != STATE_CONNECTED) {
         return;
-      } r = mConnectedThread;
+      }
+      r = mConnectedThread;
     }
     // Perform the write unsynchronized
     r.write(out);
@@ -210,20 +219,25 @@ public final class BTAdapter extends BaseConnection {
 
     // Cancel the thread that completed the connection
     if (mConnectThread != null) {
-      mConnectThread.cancel(); mConnectThread = null;
+      mConnectThread.cancel();
+      mConnectThread = null;
     }
 
     // Cancel any thread currently running a connection
     if (mConnectedThread != null) {
-      mConnectedThread.cancel(); mConnectedThread = null;
+      mConnectedThread.cancel();
+      mConnectedThread = null;
     }
 
     // Start the thread to manage the connection and perform transmissions
-    mConnectedThread = new ConnectedThread(socket, socketType); mConnectedThread.start();
+    mConnectedThread = new ConnectedThread(socket, socketType);
+    mConnectedThread.start();
 
     // Send the name of the connected device back to the UI Activity
-    Message msg = mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_DEVICE_NAME); Bundle bundle = new Bundle();
-    bundle.putString(BaseConnection.Constants.DEVICE_NAME, device.getName()); msg.setData(bundle);
+    Message msg = mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_DEVICE_NAME);
+    Bundle bundle = new Bundle();
+    bundle.putString(BaseConnection.Constants.DEVICE_NAME, device.getName());
+    msg.setData(bundle);
     mHandler.sendMessage(msg);
 
     setState(STATE_CONNECTED);
@@ -235,7 +249,9 @@ public final class BTAdapter extends BaseConnection {
     private String mSocketType;
 
     public ConnectThread(BluetoothDevice device) {
-      mmDevice = device; BluetoothSocket tmp = null; mSocketType = "Secure";
+      mmDevice = device;
+      BluetoothSocket tmp = null;
+      mSocketType = "Secure";
 
       // Get a BluetoothSocket for a connection with the
       // given BluetoothDevice
@@ -244,11 +260,13 @@ public final class BTAdapter extends BaseConnection {
         //        tmp = device.createRfcommSocketToServiceRecord(MY_UUID_SECURE);
       } catch (IOException e) {
         Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
-      } mmSocket = tmp;
+      }
+      mmSocket = tmp;
     }
 
     public void run() {
-      Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType); setName("ConnectThread" + mSocketType);
+      Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
+      setName("ConnectThread" + mSocketType);
 
       // Always cancel discovery because it will slow down a connection
       adapter.cancelDiscovery();
@@ -265,7 +283,9 @@ public final class BTAdapter extends BaseConnection {
         } catch (IOException e2) {
           Log.e(TAG, "unable to close() " + mSocketType +
                      " socket during connection failure", e2);
-        } connectionFailed(); return;
+        }
+        connectionFailed();
+        return;
       }
 
       // Reset the ConnectThread because we're done
@@ -278,9 +298,10 @@ public final class BTAdapter extends BaseConnection {
     }
 
     public void cancel() {
-      while (!isInterrupted()) {
-      } try {
-        System.out.println("ConnectThread.cancel"); mmSocket.close();
+      try {
+        interrupt();
+        Log.d(TAG, "ConnectThread.cancel");
+        mmSocket.close();
       } catch (IOException e) {
         Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
       }
@@ -289,40 +310,47 @@ public final class BTAdapter extends BaseConnection {
 
   private class ConnectedThread extends Thread {
     private final BluetoothSocket mmSocket;
-    //    private final InputStream mmInStream;
-    //    private final OutputStream mmOutStream;
     private final DataInputStream mDataIS;
     private final DataOutputStream mDataOS;
 
     public ConnectedThread(BluetoothSocket socket, String socketType) {
-      Log.d(TAG, "create ConnectedThread: " + socketType); mmSocket = socket; InputStream tmpIn = null;
+      Log.d(TAG, "create ConnectedThread: " + socketType);
+      mmSocket = socket;
+      InputStream tmpIn = null;
       OutputStream tmpOut = null;
 
       // Get the BluetoothSocket input and output streams
       try {
-        tmpIn = socket.getInputStream(); tmpOut = socket.getOutputStream();
+        tmpIn = socket.getInputStream();
+        tmpOut = socket.getOutputStream();
       } catch (IOException e) {
         Log.e(TAG, "temp sockets not created", e);
       }
 
-      mDataIS = new DataInputStream(tmpIn); mDataOS = new DataOutputStream(tmpOut);
+      mDataIS = new DataInputStream(tmpIn);
+      mDataOS = new DataOutputStream(tmpOut);
     }
 
     public void run() {
-      Log.i(TAG, "BEGIN mConnectedThread"); byte[] buffer = new byte[4096]; int length;
+      Log.i(TAG, "BEGIN mConnectedThread");
+      byte[] buffer = new byte[4096];
+      int length;
 
       // Keep listening to the InputStream while connected
       while (!isInterrupted()) {
         try {
           if (mDataIS.available() > 0) {
-            length = mDataIS.readInt(); mDataIS.readFully(buffer, 0, length);
+            length = mDataIS.readInt();
+            mDataIS.readFully(buffer, 0, length);
 
             // Send the obtained bytes to the UI Activity
             mHandler.obtainMessage(BaseConnection.Constants.MESSAGE_READ, length, -1, Arrays.copyOf(buffer, length))
                 .sendToTarget();
           }
         } catch (IOException e) {
-          Log.e(TAG, "disconnected", e); connectionLost(); break;
+          Log.e(TAG, "disconnected", e);
+          connectionLost();
+          break;
         }
 
       }
@@ -342,9 +370,10 @@ public final class BTAdapter extends BaseConnection {
     }
 
     public void cancel() {
-      while (!isInterrupted()) {
-      } try {
-        System.out.println("ConnectedThread.cancel"); mmSocket.close();
+      try {
+        interrupt();
+        Log.d(TAG, "ConnectedThread.cancel");
+        mmSocket.close();
       } catch (IOException e) {
         Log.e(TAG, "close() of connect socket failed", e);
       }

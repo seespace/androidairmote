@@ -26,9 +26,11 @@
 
 package tv.inair.airmote;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
+import android.view.View;
 
 public class MainActivity extends FragmentActivity {
 
@@ -50,6 +52,12 @@ public class MainActivity extends FragmentActivity {
       transaction.replace(R.id.fragment, fragment);
       transaction.commit();
     }
+    findViewById(R.id.fragment).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        startActivity(new Intent(MainActivity.this, WifiListActivity.class));
+      }
+    });
   }
 
   @Override

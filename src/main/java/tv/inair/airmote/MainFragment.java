@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,9 +52,10 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     mClient.addEventReceivedListener(this);
     mClient.addSocketStateChangedListener(this);
 
-    //    if (!mClient.isConnected()) {
-    //      mClient.reconnectToLastDevice();
-    //    }
+    if (!mClient.isConnected()) {
+      //mClient.reconnectToLastDevice();
+      mClient.quickConnect();
+    }
   }
 
   @Override
@@ -157,7 +159,7 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
           String bssid = data.getStringExtra(WifiListActivity.EXTRA_BSSID);
           String capabilities = data.getStringExtra(WifiListActivity.EXTRA_CAPABILITIES);
           String password = data.getStringExtra(WifiListActivity.EXTRA_PASSWORD);
-          System.out.println("MainFragment.onActivityResult " + ssid + " " + bssid + " " + capabilities + " " + password);
+          Log.d(getClass().getSimpleName(), "onActivityResult " + ssid + " " + bssid + " " + capabilities + " " + password);
           WifiAdapter.connectWifiTo(ssid, bssid, capabilities, password);
         }
         break;

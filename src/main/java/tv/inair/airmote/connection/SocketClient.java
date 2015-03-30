@@ -59,8 +59,7 @@ public final class SocketClient {
     if (!mIsPC || !mUSBConnected || !mSettingUp) {
       return;
     }
-    Application.notify(activity.get(), "Connecting ...");
-    mConnection.startQuickConnect();
+    quickConnect();
   }
 
   private void stopScanAndQuickConnect() {
@@ -77,6 +76,11 @@ public final class SocketClient {
     } else {
       mConnection.startQuickConnect();
     }
+  }
+
+  public void quickConnect() {
+    Application.notify(activity.get(), "Connecting ...");
+    mConnection.startQuickConnect();
   }
 
   public boolean isInSettingMode() {
@@ -125,10 +129,6 @@ public final class SocketClient {
   public void stopScanInAir() {
     mConnection.registerDeviceFoundListener(null);
     mConnection.stopScan();
-  }
-
-  public String getDisplayName() {
-    return mDevice.deviceName;
   }
 
   public boolean reconnectToLastHost() {

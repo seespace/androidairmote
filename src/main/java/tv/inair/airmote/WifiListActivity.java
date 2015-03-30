@@ -117,6 +117,12 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
     ListView newDevicesListView = (ListView) findViewById(R.id.listview);
     newDevicesListView.setAdapter(adapter);
     newDevicesListView.setOnItemClickListener(this);
+    findViewById(R.id.listview).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        startActivity(new Intent(WifiListActivity.this, WifiConnectActivity.class));
+      }
+    });
   }
 
   @Override
@@ -192,7 +198,6 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
             item.strength = wifi.strength;
             item.bssid = wifi.bssid;
             item.capabilities = wifi.capabilities;
-            System.out.println("WifiListActivity.onEventReceived " + wifi.ssid + " " + wifi.capabilities + " " + wifi.strength + " " + item.bssid);
             adapter.add(item);
           }
         } else {

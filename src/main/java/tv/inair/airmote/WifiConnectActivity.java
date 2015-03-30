@@ -69,7 +69,6 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
         if (responseEvent.error) {
           Application.notify(this, responseEvent.errorMessage);
         } else {
-          System.out.println("WifiConnectActivity.onEventReceived connected");
           Intent res = new Intent();
           res.putExtra(EXTRA_SSID, ssid);
           res.putExtra(EXTRA_PASSWORD, passwordView.getText().toString());

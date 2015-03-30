@@ -110,7 +110,6 @@ public class WebViewActivity extends Activity implements OnEventReceived {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
       Uri uri = Uri.parse(url);
-      System.out.println("AAA " + uri);
       if (OAUTH_SERVER.equalsIgnoreCase(uri.getHost())) {
         String code = null;
         Set<String> queryParamNames = uri.getQueryParameterNames();
@@ -120,7 +119,6 @@ public class WebViewActivity extends Activity implements OnEventReceived {
           code = uri.getQueryParameter("oauth_verifier");
         }
         if (code != null) {
-          System.out.println("Has code: " + code);
           mClient.sendEvent(Helper.newOAuthResponseEvent(code, replyTo));
         }
         dismissActivity();
@@ -129,8 +127,6 @@ public class WebViewActivity extends Activity implements OnEventReceived {
         if (INAIR_SCHEMA.equalsIgnoreCase(uri.getScheme())) {
           String action = uri.getHost();
           String jsonDictString = uri.getFragment();
-
-          System.out.println("Client.shouldOverrideUrlLoading " + action + " " + jsonDictString);
 
           if (!jsonDictString.isEmpty()) {
             Proto.Event response = Helper.newWebViewResponseEvent(jsonDictString, replyTo);
@@ -155,7 +151,6 @@ public class WebViewActivity extends Activity implements OnEventReceived {
 
     @Override
     public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-      System.out.println("Client.onReceivedError " + description + " " + failingUrl);
       dismissActivity();
     }
   }
