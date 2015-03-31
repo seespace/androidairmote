@@ -75,9 +75,9 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
       }
 
       if (rowItem.isOpenNetwork()) {
-        holder.signalView.setImageResource(R.drawable.wifi_signal_open_dark);
+        holder.signalView.setImageResource(R.drawable.wifi_signal_open_light);
       } else {
-        holder.signalView.setImageResource(R.drawable.wifi_signal_lock_dark);
+        holder.signalView.setImageResource(R.drawable.wifi_signal_lock_light);
       }
       holder.signalView.setImageLevel(rowItem.strength);
       holder.ssidView.setText(rowItem.ssid);
@@ -117,12 +117,6 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
     ListView newDevicesListView = (ListView) findViewById(R.id.listview);
     newDevicesListView.setAdapter(adapter);
     newDevicesListView.setOnItemClickListener(this);
-    findViewById(R.id.listview).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        startActivity(new Intent(WifiListActivity.this, WifiConnectActivity.class));
-      }
-    });
   }
 
   @Override

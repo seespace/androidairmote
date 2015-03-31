@@ -11,7 +11,7 @@
       android:layout_width="50sp"
       android:layout_height="50sp"
       android:id="@+id/signal"
-      android:src="@drawable/wifi_signal_open_dark"
+      android:src="@drawable/wifi_signal_open_light"
       />
 
   <TextView
@@ -20,6 +20,6 @@
       android:padding="5dp"
       android:textSize="18sp"
       android:id="@+id/ssid"
-      android:text="ssid" android:layout_gravity="center"/>
+      android:layout_gravity="center"/>
 
 </LinearLayout>

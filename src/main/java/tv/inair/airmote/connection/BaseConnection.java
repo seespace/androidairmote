@@ -117,14 +117,16 @@ public abstract class BaseConnection {
   }
 
   protected final void onDeviceFound(final Device device) {
-    mHandler.post(new Runnable() {
-      @Override
-      public void run() {
-        if (mDeviceFoundListener != null && mDeviceFoundListener.get() != null) {
-          mDeviceFoundListener.get().onDeviceFound(device);
+    if (mHandler != null) {
+      mHandler.post(new Runnable() {
+        @Override
+        public void run() {
+          if (mDeviceFoundListener != null && mDeviceFoundListener.get() != null) {
+            mDeviceFoundListener.get().onDeviceFound(device);
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   public void register(Context context) {}
