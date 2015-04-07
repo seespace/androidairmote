@@ -23,6 +23,8 @@ public final class SocketClient {
 
   private static final String TAG = "SocketClient";
 
+  public static final String STOP_MESSAGE = "STOP_SETUP";
+
   //region Description
   private boolean mUSBConnected = false;
   private boolean mIsPC = false;
@@ -33,14 +35,13 @@ public final class SocketClient {
       switch (action) {
         case Intent.ACTION_POWER_CONNECTED: {
           mUSBConnected = true;
-          Application.notify(context, "USB Connected");
+          Application.notify("USB Connected", Application.Status.SUCCESS);
           quickScanAndConnect();
           break;
         }
 
         case Intent.ACTION_POWER_DISCONNECTED:
           mUSBConnected = false;
-          onStateChanged(false, "STOP_SETUP");
           stopScanAndQuickConnect();
           break;
 
@@ -63,8 +64,9 @@ public final class SocketClient {
   }
 
   private void stopScanAndQuickConnect() {
+    onStateChanged(false, STOP_MESSAGE);
     if (mSettingUp) {
-      Application.notify(activity.get(), "No device connect");
+      Application.notify("No device connect", Application.Status.ERROR);
       mConnection.stopQuickConnect();
     }
   }
@@ -79,7 +81,7 @@ public final class SocketClient {
   }
 
   public void quickConnect() {
-    Application.notify(activity.get(), "Connecting ...");
+    Application.notify("Connecting ...", Application.Status.NORMAL);
     mConnection.startQuickConnect();
   }
 
@@ -96,7 +98,6 @@ public final class SocketClient {
     filter.addAction(Intent.ACTION_POWER_CONNECTED);
     filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
     filter.addAction(Intent.ACTION_BATTERY_CHANGED);
-    //    filter.addAction(ACTION_USB_STATE);
     context.registerReceiver(receiver, filter);
 
     mConnection.register(context);
@@ -131,20 +132,19 @@ public final class SocketClient {
     mConnection.stopScan();
   }
 
-  public boolean reconnectToLastHost() {
-    BaseConnection.Device device = BaseConnection.Device.getFromPref(Application.getTempPreferences());
-    return device.address != null && connectTo(device);
-  }
-
-  public boolean reconnectToLastDevice() {
-    BaseConnection.Device device = BaseConnection.Device.getFromPref(Application.getSettingsPreferences());
-    return device.address != null && connectTo(device);
-
-  }
+  //public boolean reconnectToLastHost() {
+  //  BaseConnection.Device device = BaseConnection.Device.getFromPref(Application.getTempPreferences());
+  //  return device.address != null && connectTo(device);
+  //}
+  //
+  //public boolean reconnectToLastDevice() {
+  //  BaseConnection.Device device = BaseConnection.Device.getFromPref(Application.getSettingsPreferences());
+  //  return device.address != null && connectTo(device);
+  //}
 
   public boolean connectTo(BaseConnection.Device device) {
     Log.d(TAG, "ConnectTo " + device.address + " " + device.deviceName);
-    Application.notify(activity.get(), "Connecting ...");
+    Application.notify("Connecting ...", Application.Status.NORMAL);
     mDevice = device;
     return mConnection.connect(device);
   }
@@ -215,12 +215,20 @@ public final class SocketClient {
         // BaseConnection.Device.saveToPref(Application.getSettingsPreferences(), mDevice);
         sendEvent(Helper.newDeviceEvent(activity.get(), Proto.DeviceEvent.REGISTER));
         onStateChanged(true, mDevice.deviceName);
-        Application.notify(activity.get(), "Connected to " + mDevice.deviceName);
+        Application.notify("Connected to " + mDevice.deviceName, Application.Status.SUCCESS);
+        break;
+
+      case BaseConnection.STATE_CONNECTING:
+        Application.notify("Connecting to " + mDevice.deviceName, Application.Status.NORMAL);
         break;
 
       case BaseConnection.STATE_NONE:
-        onStateChanged(false, mDevice.deviceName);
-        Application.notify(activity.get(), "Disconnected");
+        if (!mSettingUp) {
+          onStateChanged(false, mDevice.deviceName);
+          Application.notify("Disconnected", Application.Status.ERROR);
+        } else if (WifiAdapter.INAIR_DEVICE.deviceName.equals(mDevice.deviceName)) {
+          onStateChanged(false, STOP_MESSAGE);
+        }
         break;
     }
   }

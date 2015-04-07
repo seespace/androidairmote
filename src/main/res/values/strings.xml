@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-  <string name="app_name">Airmote</string>
+  <string name="help_url">https://www.inair.tv/guide</string>
+
+  <string name="app_name">InAiR Remote</string>
   <string name="hello_world">Hello world!</string>
 
   <string name="title_activity_webview">WebView</string>
 
   <string name="connectTxt">Connect</string>
   <string name="pwdTxt">Password</string>
-  <string name="connectDesTxt">Connect to</string>
-  <string name="ok_btn">Ok</string>
+  <string name="connectDesTxt">Enter password for</string>
+  <string name="ok_btn">OK</string>
   <string name="cancel_btn">Cancel</string>
-  <string name="title_activity_text_input">TextInputActivity</string>
   <string name="action_settings">Settings</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+  <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

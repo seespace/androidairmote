@@ -26,11 +26,12 @@
 
 package tv.inair.airmote;
 
-import android.content.Intent;
+import android.app.ActionBar;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.view.View;
+import android.widget.TextView;
 
 public class MainActivity extends FragmentActivity {
 
@@ -42,6 +43,7 @@ public class MainActivity extends FragmentActivity {
     setContentView(R.layout.activity_main);
 
     Application.getSocketClient().register(this);
+    Application.setStatusView(((TextView) findViewById(R.id.status)));
 
     if (savedInstanceState == null) {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -52,12 +54,23 @@ public class MainActivity extends FragmentActivity {
       transaction.replace(R.id.fragment, fragment);
       transaction.commit();
     }
-    findViewById(R.id.fragment).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        startActivity(new Intent(MainActivity.this, WifiListActivity.class));
-      }
-    });
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+
+    View decorView = getWindow().getDecorView();
+    // Hide the status bar.
+    int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+    decorView.setSystemUiVisibility(uiOptions);
+    // Remember that you should never show the action bar if the
+    // status bar is hidden, so hide that too if necessary.
+    ActionBar actionBar = getActionBar();
+    if (actionBar != null) {
+      actionBar.hide();
+    }
+
   }
 
   @Override
@@ -70,7 +83,6 @@ public class MainActivity extends FragmentActivity {
   @Override
   protected void onDestroy() {
     Application.getSocketClient().unregister();
-    Application.notify(this, null);
     super.onDestroy();
   }
 }

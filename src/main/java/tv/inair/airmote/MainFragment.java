@@ -53,7 +53,6 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     mClient.addSocketStateChangedListener(this);
 
     if (!mClient.isConnected()) {
-      //mClient.reconnectToLastDevice();
       mClient.quickConnect();
     }
   }
@@ -71,6 +70,13 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     final ImageView scan = ((ImageView) view.findViewById(R.id.scan));
     final ImageView mode2d3d = ((ImageView) view.findViewById(R.id.mode2d3d));
     final ImageView settings = ((ImageView) view.findViewById(R.id.settings));
+
+    view.findViewById(R.id.helpBtn).setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        showHelp();
+      }
+    });
 
     view.findViewById(R.id.moreBtn).setOnClickListener(new View.OnClickListener() {
       @Override
@@ -183,6 +189,12 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   //endregion
 
   //region Buttons
+  private void showHelp() {
+    Intent i = new Intent(getActivity(), WebViewActivity.class);
+    i.putExtra(WebViewActivity.EXTRA_URL, getResources().getString(R.string.help_url));
+    startActivity(i);
+  }
+
   private boolean isShow = true;
 
   private void toggleControlView() {

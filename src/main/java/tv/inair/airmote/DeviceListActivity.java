@@ -16,6 +16,7 @@
 
 package tv.inair.airmote;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -76,6 +77,22 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
   }
 
   @Override
+  protected void onResume() {
+    super.onResume();
+
+    View decorView = getWindow().getDecorView();
+    // Hide the status bar.
+    int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+    decorView.setSystemUiVisibility(uiOptions);
+    // Remember that you should never show the action bar if the
+    // status bar is hidden, so hide that too if necessary.
+    ActionBar actionBar = getActionBar();
+    if (actionBar != null) {
+      actionBar.hide();
+    }
+  }
+
+  @Override
   protected void onDestroy() {
     cancelDiscovery();
     super.onDestroy();
@@ -101,7 +118,7 @@ public class DeviceListActivity extends Activity implements AdapterView.OnItemCl
     // Indicate scanning in the title
     //setProgressBarIndeterminateVisibility(true);
     setTitle("Scanning");
-    Application.notify(this, "Scanning ...");
+    Application.notify("Scanning ...", Application.Status.NORMAL);
 
     mDevicesAdapter.clear();
     mClient.startScanInAir(this);

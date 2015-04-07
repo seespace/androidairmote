@@ -8,6 +8,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.walnutlabs.android.ProgressHUD;
+
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.SocketClient;
@@ -31,6 +33,7 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   private String ssid;
 
   private SocketClient mClient;
+  private ProgressHUD hud;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +61,21 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   }
 
   @Override
+  protected void onResume() {
+    super.onResume();
+    //View decorView = getWindow().getDecorView();
+    //// Hide the status bar.
+    //int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+    //decorView.setSystemUiVisibility(uiOptions);
+    //// Remember that you should never show the action bar if the
+    //// status bar is hidden, so hide that too if necessary.
+    //ActionBar actionBar = getActionBar();
+    //if (actionBar != null) {
+    //  actionBar.hide();
+    //}
+  }
+
+  @Override
   public void onEventReceived(Proto.Event event) {
     if (isFinishing()) {
       return;
@@ -66,8 +84,12 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
       assert responseEvent != null;
       if (responseEvent.phase == Proto.REQUEST_WIFI_CONNECT) {
+        if (hud != null) {
+          hud.dismiss();
+        }
         if (responseEvent.error) {
-          Application.notify(this, responseEvent.errorMessage);
+          ProgressHUD.show(this, "Error", responseEvent.errorMessage, ProgressHUD.Style.Checkmark, true, null);
+          passwordView.setHint(responseEvent.errorMessage);
         } else {
           Intent res = new Intent();
           res.putExtra(EXTRA_SSID, ssid);
@@ -80,6 +102,7 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   }
 
   public void onConnectButtonClicked(View view) {
+    hud = ProgressHUD.show(this, "InAiR", "Connecting to " + ssid, ProgressHUD.Style.Indeterminate, false, null);
     mClient.sendEvent(Helper.setupWifiConnectRequestWithSSID(ssid, passwordView.getText().toString()));
   }
 }

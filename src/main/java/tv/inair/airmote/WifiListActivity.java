@@ -106,7 +106,7 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
 
     adapter = new WifiListAdapter(this, R.layout.wifi_item);
 
-    Application.notify(this, "Scanning Wifi");
+    Application.notify("Scanning Wifi", Application.Status.NORMAL);
     mClient.sendEvent(Helper.setupWifiScanRequest());
 
     setContentView(R.layout.activity_list);
@@ -117,6 +117,21 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
     ListView newDevicesListView = (ListView) findViewById(R.id.listview);
     newDevicesListView.setAdapter(adapter);
     newDevicesListView.setOnItemClickListener(this);
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    //View decorView = getWindow().getDecorView();
+    //// Hide the status bar.
+    //int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+    //decorView.setSystemUiVisibility(uiOptions);
+    //// Remember that you should never show the action bar if the
+    //// status bar is hidden, so hide that too if necessary.
+    //ActionBar actionBar = getActionBar();
+    //if (actionBar != null) {
+    //  actionBar.hide();
+    //}
   }
 
   @Override
@@ -146,8 +161,9 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
 
   @Override
   public void onStateChanged(boolean connect, String message) {
-    if ("STOP_SETUP".equals(message)) {
-      finishAffinity();
+    System.out.println("WifiListActivity.onStateChanged " + connect + " " + message);
+    if (SocketClient.STOP_MESSAGE.equals(message)) {
+      finish();
     }
   }
 
@@ -195,7 +211,7 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
             adapter.add(item);
           }
         } else {
-          Application.notify(this, "No wifi available");
+          Application.notify("No wifi available", Application.Status.NORMAL);
         }
       }
     }

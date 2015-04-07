@@ -11,7 +11,21 @@
       android:layout_width="1dp"
       android:layout_height="match_parent"
       android:layout_centerHorizontal="true"
-      android:background="@drawable/rectangle"/>
+      android:background="@drawable/rectangle"
+      />
+
+  <ImageView
+      style="@style/Button"
+      android:layout_width="35dp"
+      android:layout_height="35dp"
+      android:layout_gravity="end"
+      android:background="@drawable/btn_state"
+      android:padding="0dp"
+      android:id="@+id/helpBtn"
+      android:src="@drawable/hoicham"
+      android:layout_margin="15dp"
+      android:layout_alignParentEnd="true"/>
+
   <LinearLayout
       android:id="@+id/controlView"
       android:layout_width="fill_parent"
@@ -25,21 +39,23 @@
         style="@style/Button"
         android:layout_width="45dp"
         android:layout_height="20dp"
-        android:layout_gravity="right"
-        android:onClick="onMoreBtnClicked"
+        android:layout_gravity="end"
         android:background="@drawable/btn_state"
         android:padding="0dp"
         android:id="@+id/moreBtn"/>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" android:id="@+id/controlContainer">
+        android:orientation="horizontal"
+        android:id="@+id/controlContainer">
 
       <LinearLayout
           style="@style/Button"
           android:id="@+id/threeDBtn"
           android:layout_width="match_parent"
-          android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:orientation="vertical">
 
         <ImageView
             android:layout_width="30dp"
@@ -48,11 +64,11 @@
             android:id="@+id/mode2d3d"
             />
         <!--<TextView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:text="Display"-->
-            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:text="Display"-->
+        <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
 
       </LinearLayout>
 
@@ -69,11 +85,11 @@
             android:id="@+id/scan"
             />
         <!--<TextView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:text="Scan"-->
-            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:text="Scan"-->
+        <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
 
       </LinearLayout>
 
@@ -89,11 +105,11 @@
             android:layout_gravity="center_horizontal"
             android:id="@+id/settings"/>
         <!--<TextView-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:text="Setup"-->
-            <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_gravity="center_horizontal"-->
+        <!--android:text="Setup"-->
+        <!--android:textAppearance="?android:attr/textAppearanceSmall" android:textColor="@android:color/black"/>-->
 
       </LinearLayout>
 

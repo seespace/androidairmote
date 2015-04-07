@@ -1,12 +1,14 @@
 package tv.inair.airmote;
 
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.app.NotificationCompat;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.widget.TextView;
 
 import com.crashlytics.android.Crashlytics;
+
+import java.lang.ref.WeakReference;
 
 import io.fabric.sdk.android.Fabric;
 import tv.inair.airmote.connection.SocketClient;
@@ -44,21 +46,49 @@ public class Application extends android.app.Application {
     return mSettingsPreferences;
   }
 
-  private static final String TAG = "inAiR";
+  public static final int ERROR_COLOR = Color.parseColor("#ffff4444");
+  public static final int NORMAL_COLOR = Color.parseColor("#ffe6e6e6");
+  public static final int SUCCESS_COLOR = Color.parseColor("#ff33b5e5");
 
-  public static void notify(Context context, String message) {
-    if (context != null) {
-      NotificationManager manager = ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE));
-      if (message == null) {
-        manager.cancel(0);
-      } else {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context).setSmallIcon(R.drawable.ic_launcher)
-            .setLocalOnly(true)
-            .setTicker(message)
-            .setPriority(Notification.PRIORITY_MAX)
-            .setContentTitle(TAG)
-            .setContentText(message);
-        manager.notify(0, builder.build());
+  public enum Status {
+    ERROR,
+    NORMAL,
+    SUCCESS
+  }
+
+  private static String mCurrentMessage = "Disconnected";
+  private static Status mCurrentType = Status.ERROR;
+
+  private static WeakReference<TextView> mStatus;
+  public static void setStatusView(TextView status) {
+    if (status != null) {
+      mStatus = new WeakReference<>(status);
+    }
+
+    notify(mCurrentMessage, mCurrentType);
+  }
+
+  public static void notify(String message, Status type) {
+    mCurrentType = type;
+    mCurrentMessage = message;
+
+    if (mStatus != null && mStatus.get() != null) {
+      TextView view = mStatus.get();
+      view.setText(mCurrentMessage);
+      view.setTypeface(view.getTypeface(), Typeface.NORMAL);
+      switch (mCurrentType) {
+        case ERROR:
+          view.setBackgroundColor(ERROR_COLOR);
+          break;
+
+        case NORMAL:
+          view.setTypeface(view.getTypeface(), Typeface.BOLD);
+          view.setBackgroundColor(NORMAL_COLOR);
+          break;
+
+        case SUCCESS:
+          view.setBackgroundColor(SUCCESS_COLOR);
+          break;
       }
     }
   }

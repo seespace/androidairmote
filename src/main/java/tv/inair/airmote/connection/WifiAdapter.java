@@ -61,7 +61,7 @@ public final class WifiAdapter extends BaseConnection {
   private static final String INAIR_SSID = String.format("\"%s\"", "InAiR");
   private static final String INAIR_PASSWORD = String.format("\"%s\"", "12345678");
 
-  private static final Device INAIR_DEVICE = new Device("InAiR", "192.168.49.1");
+  public static final Device INAIR_DEVICE = new Device("InAiR", "192.168.49.1");
   private static final int INAIR_PORT = 8989;
 
   private ConnectThread mConnectThread;
@@ -72,6 +72,8 @@ public final class WifiAdapter extends BaseConnection {
 
   private SocketClient mClient;
 
+  private boolean mConnectingInAiR;
+
   private void _connectToInAiR() {
     if (!mManager.isWifiEnabled()) {
       mManager.setWifiEnabled(true);
@@ -81,9 +83,6 @@ public final class WifiAdapter extends BaseConnection {
   }
 
   private void _disableInAirNetwork() {
-    if (!mManager.isWifiEnabled()) {
-      mManager.setWifiEnabled(true);
-    }
     mSetupInAiR = false;
     List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
     if (configs != null) {
@@ -94,6 +93,12 @@ public final class WifiAdapter extends BaseConnection {
         }
       }
     }
+
+    if (mConnectingInAiR) {
+      mManager.setWifiEnabled(false);
+    }
+    mManager.setWifiEnabled(true);
+    mConnectingInAiR = false;
   }
 
   private boolean _checkIfInAiR(String ssid) {
@@ -112,6 +117,7 @@ public final class WifiAdapter extends BaseConnection {
             List<ScanResult> results = mManager.getScanResults();
             for (ScanResult res : results) {
               if (_checkIfInAiR("\"" + res.SSID + "\"")) {
+                mConnectingInAiR = true;
                 mSetupInAiR = false;
                 int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
                 mManager.disconnect();
@@ -187,6 +193,10 @@ public final class WifiAdapter extends BaseConnection {
     filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
     filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
     context.registerReceiver(mReceiver, filter);
+
+    if (!mManager.isWifiEnabled()) {
+      mManager.setWifiEnabled(true);
+    }
   }
 
   @Override
