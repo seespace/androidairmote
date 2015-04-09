@@ -47,7 +47,7 @@ public class Application extends android.app.Application {
   }
 
   public static final int ERROR_COLOR = Color.parseColor("#ffff4444");
-  public static final int NORMAL_COLOR = Color.parseColor("#ffe6e6e6");
+  public static final int NORMAL_COLOR = Color.parseColor("#ffffffff");
   public static final int SUCCESS_COLOR = Color.parseColor("#ff33b5e5");
 
   public enum Status {
@@ -78,15 +78,17 @@ public class Application extends android.app.Application {
       view.setTypeface(view.getTypeface(), Typeface.NORMAL);
       switch (mCurrentType) {
         case ERROR:
+          view.setTextColor(Color.WHITE);
           view.setBackgroundColor(ERROR_COLOR);
           break;
 
         case NORMAL:
-          view.setTypeface(view.getTypeface(), Typeface.BOLD);
+          view.setTextColor(Color.BLACK);
           view.setBackgroundColor(NORMAL_COLOR);
           break;
 
         case SUCCESS:
+          view.setTextColor(Color.WHITE);
           view.setBackgroundColor(SUCCESS_COLOR);
           break;
       }

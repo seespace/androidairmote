@@ -4,16 +4,17 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.walnutlabs.android.ProgressHUD;
+import com.thuongnh.zprogresshud.ZProgressHUD;
 
+import inair.eventcenter.proto.Helper;
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.SocketClient;
-import inair.eventcenter.proto.Helper;
 
 /**
  * <p>
@@ -33,7 +34,7 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   private String ssid;
 
   private SocketClient mClient;
-  private ProgressHUD hud;
+  private ZProgressHUD hud;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -58,21 +59,8 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
     passwordView = ((EditText) findViewById(R.id.editText));
     TextView des = ((TextView) findViewById(R.id.description));
     des.setText(getResources().getString(R.string.connectDesTxt) + " " + ssid);
-  }
 
-  @Override
-  protected void onResume() {
-    super.onResume();
-    //View decorView = getWindow().getDecorView();
-    //// Hide the status bar.
-    //int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-    //decorView.setSystemUiVisibility(uiOptions);
-    //// Remember that you should never show the action bar if the
-    //// status bar is hidden, so hide that too if necessary.
-    //ActionBar actionBar = getActionBar();
-    //if (actionBar != null) {
-    //  actionBar.hide();
-    //}
+    hud = ZProgressHUD.getInstance(this);
   }
 
   @Override
@@ -80,17 +68,15 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
     if (isFinishing()) {
       return;
     }
-    if (event != null && event.type != null) {
+    if (event != null && event.type != null && event.type == Proto.Event.SETUP_RESPONSE) {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
       assert responseEvent != null;
       if (responseEvent.phase == Proto.REQUEST_WIFI_CONNECT) {
-        if (hud != null) {
-          hud.dismiss();
-        }
         if (responseEvent.error) {
-          ProgressHUD.show(this, "Error", responseEvent.errorMessage, ProgressHUD.Style.Checkmark, true, null);
-          passwordView.setHint(responseEvent.errorMessage);
+          Log.d("INAIR", responseEvent.errorMessage);
+          hud.dismissWithFailure(responseEvent.errorMessage);
         } else {
+          hud.dismissWithSuccess();
           Intent res = new Intent();
           res.putExtra(EXTRA_SSID, ssid);
           res.putExtra(EXTRA_PASSWORD, passwordView.getText().toString());
@@ -102,7 +88,10 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   }
 
   public void onConnectButtonClicked(View view) {
-    hud = ProgressHUD.show(this, "InAiR", "Connecting to " + ssid, ProgressHUD.Style.Indeterminate, false, null);
+    hud.setMessage("Connecting to " + ssid);
+    //hud.setCancelable(false);
+    hud.show();
+    //hud.setSpinnerType(ZProgressHUD.FADED_ROUND_SPINNER);
     mClient.sendEvent(Helper.setupWifiConnectRequestWithSSID(ssid, passwordView.getText().toString()));
   }
 }

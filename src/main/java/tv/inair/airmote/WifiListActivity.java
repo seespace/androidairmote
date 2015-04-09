@@ -196,7 +196,7 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
     if (isFinishing()) {
       return;
     }
-    if (event != null && event.type != null) {
+    if (event != null && event.type != null && event.type == Proto.Event.SETUP_RESPONSE) {
       Proto.SetupResponseEvent responseEvent = event.getExtension(Proto.SetupResponseEvent.event);
       assert responseEvent != null;
       if (responseEvent.phase == Proto.REQUEST_WIFI_SCAN) {

@@ -67,8 +67,8 @@ public final class SocketClient {
     onStateChanged(false, STOP_MESSAGE);
     if (mSettingUp) {
       Application.notify("No device connect", Application.Status.ERROR);
-      mConnection.stopQuickConnect();
     }
+    mConnection.stopQuickConnect();
   }
 
   public synchronized void changeToSettingMode(boolean setup) {
@@ -114,7 +114,7 @@ public final class SocketClient {
   //endregion
 
   //region Public
-  private BaseConnection mConnection;
+  private final BaseConnection mConnection;
   private BaseConnection.Device mDevice = BaseConnection.Device.EMPTY;
 
   public SocketClient() {
@@ -130,6 +130,9 @@ public final class SocketClient {
   public void stopScanInAir() {
     mConnection.registerDeviceFoundListener(null);
     mConnection.stopScan();
+  }
+
+  public void ensureNotConnectToWifiDirect() {
   }
 
   //public boolean reconnectToLastHost() {

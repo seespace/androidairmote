@@ -84,18 +84,24 @@ public final class WifiAdapter extends BaseConnection {
 
   private void _disableInAirNetwork() {
     mSetupInAiR = false;
+
+    if (mConnectingInAiR) {
+      mManager.disconnect();
+    }
+
     List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
     if (configs != null) {
       for (int i = 0; i < configs.size(); i++) {
         WifiConfiguration config = configs.get(i);
         if (_checkIfInAiR(config.SSID)) {
-          mManager.disableNetwork(config.networkId);
+          mManager.removeNetwork(config.networkId);
         }
       }
+      mManager.saveConfiguration();
     }
 
     if (mConnectingInAiR) {
-      mManager.setWifiEnabled(false);
+      stopWifiAdapter();
     }
     mManager.setWifiEnabled(true);
     mConnectingInAiR = false;
@@ -183,6 +189,11 @@ public final class WifiAdapter extends BaseConnection {
   //endregion
 
   //region Implement
+  private void stopWifiAdapter() {
+    mNsdHelper.stopDiscover();
+    mManager.setWifiEnabled(false);
+  }
+
   @Override
   public void register(Context context) {
     mClient = Application.getSocketClient();
@@ -256,15 +267,18 @@ public final class WifiAdapter extends BaseConnection {
     }
 
     WifiAdapter ins = getInstance();
+    ins._disableInAirNetwork();
 
-    if (!ins.mManager.isWifiEnabled()) {
-      ins.mManager.setWifiEnabled(true);
-    }
+    Log.d(TAG, "connectTo " + ssid + " " + bssid + " " + capabilities + " " + password);
+    ins.mManager.setWifiEnabled(true);
+
     int netId = ins.mManager.addNetwork(config);
 
     ins.mManager.disconnect();
     ins.mManager.enableNetwork(netId, false);
     ins.mManager.reconnect();
+
+    ins.mManager.saveConfiguration();
 
     getInstance().startQuickConnect();
   }
@@ -462,6 +476,9 @@ public final class WifiAdapter extends BaseConnection {
     }
 
     public void startDiscover() {
+      if (!mManager.isWifiEnabled()) {
+        mManager.setWifiEnabled(true);
+      }
       if (isScaning) {
         stopDiscover();
       }
