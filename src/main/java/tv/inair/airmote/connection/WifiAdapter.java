@@ -225,6 +225,10 @@ public final class WifiAdapter extends BaseConnection {
 
   @Override
   public boolean startQuickConnect() {
+    if (mClient == null) {
+      Log.w(TAG, "WTF???");
+      return false;
+    }
     if (mClient.isInSettingMode()) {
       _connectToInAiR();
     } else {
@@ -461,8 +465,7 @@ public final class WifiAdapter extends BaseConnection {
 
     private NsdManager mNsdManager;
     private boolean isScaning = false;
-    private final DiscoveryListener discoveryListener = new DiscoveryListener();
-    private final ResolveListener resolveListener = new ResolveListener();
+    private DiscoveryListener discoveryListener = null;
 
     public void registerListener(Context context) {
       mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
@@ -479,29 +482,31 @@ public final class WifiAdapter extends BaseConnection {
       if (!mManager.isWifiEnabled()) {
         mManager.setWifiEnabled(true);
       }
-      if (isScaning) {
+      if (isScaning || discoveryListener != null) {
         stopDiscover();
       }
+      discoveryListener = new DiscoveryListener();
       mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener);
       isScaning = true;
     }
 
     public void stopDiscover() {
-      if (!isScaning) {
-        return;
-      }
-      try {
-        mNsdManager.stopServiceDiscovery(discoveryListener);
-      } catch (Exception e) {
-        e.printStackTrace();
+      if (discoveryListener != null) {
+        try {
+          mNsdManager.stopServiceDiscovery(discoveryListener);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        discoveryListener = null;
       }
       isScaning = false;
     }
 
     public void resolveAndConnectDevice(Device device) {
       NsdServiceInfo info = (NsdServiceInfo) device.parcelable;
-      resolveListener.currentDevice = device;
-      mNsdManager.resolveService(info, resolveListener);
+      ResolveListener listener = new ResolveListener();
+      listener.currentDevice = device;
+      mNsdManager.resolveService(info, listener);
     }
 
     //region NsdManager.DiscoveryListener

@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
@@ -57,6 +58,19 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
     private class ViewHolder {
       ImageView signalView;
       TextView ssidView;
+    }
+
+    public synchronized RowItem getItem(String ssid, String bssid) {
+      if (ssid == null || bssid == null) {
+        return null;
+      }
+      for (int i = 0; i < getCount(); i++) {
+        RowItem item = getItem(i);
+        if (ssid.equalsIgnoreCase(item.ssid) && bssid.equalsIgnoreCase(item.bssid)) {
+          return item;
+        }
+      }
+      return null;
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
@@ -201,16 +215,19 @@ public class WifiListActivity extends Activity implements AdapterView.OnItemClic
       assert responseEvent != null;
       if (responseEvent.phase == Proto.REQUEST_WIFI_SCAN) {
         if (responseEvent.wifiNetworks != null && responseEvent.wifiNetworks.length > 0) {
-          adapter.clear();
           for (Proto.WifiNetwork wifi : responseEvent.wifiNetworks) {
-            RowItem item = new RowItem();
-            item.ssid = wifi.ssid;
+            RowItem item = adapter.getItem(wifi.ssid, wifi.bssid);
+            if (item == null) {
+              item = new RowItem();
+              item.ssid = wifi.ssid;
+              item.bssid = wifi.bssid;
+              adapter.add(item);
+            }
             item.strength = wifi.strength;
-            item.bssid = wifi.bssid;
             item.capabilities = wifi.capabilities;
-            adapter.add(item);
           }
         } else {
+          Toast.makeText(this, "No wifi available", Toast.LENGTH_LONG).show();
           Application.notify("No wifi available", Application.Status.NORMAL);
         }
       }

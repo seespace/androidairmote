@@ -64,24 +64,32 @@ public class ZProgressHUD extends Dialog {
 
     setSpinnerType(FADED_ROUND_SPINNER);
 
-    final ViewTreeObserver vto = view.getViewTreeObserver();
+    final View hud = view.findViewById(R.id.hud);
+    final ViewTreeObserver vto = hud.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
       @Override
       public void onGlobalLayout() {
         int pLength;
-        int pWidth = view.getWidth();
-        int pHeight = view.getHeight();
+        int pWidth = hud.getWidth();
+        int pHeight = hud.getHeight();
 
         //Set myGridLayout equal width and height
         if (pWidth >= pHeight) {
-          pLength = pHeight;
-        } else {
           pLength = pWidth;
+        } else {
+          pLength = pHeight;
         }
-        ViewGroup.LayoutParams pParams = view.getLayoutParams();
+
+        if (pLength == pWidth && pLength == pHeight) {
+          return;
+        }
+
+        System.out.println("onGlobalLayout " + pLength + " " + pWidth + " " + pHeight);
+
+        ViewGroup.LayoutParams pParams = hud.getLayoutParams();
         pParams.width = pLength;
         pParams.height = pLength;
-        view.setLayoutParams(pParams);
+        hud.setLayoutParams(pParams);
 
         //vto.removeOnGlobalLayoutListener(this);
       }

@@ -76,6 +76,7 @@ public final class SocketClient {
     if (!setup) {
       stopScanAndQuickConnect();
     } else {
+      Application.notify("Connecting ...", Application.Status.ERROR);
       mConnection.startQuickConnect();
     }
   }
