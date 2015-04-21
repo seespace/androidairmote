@@ -88,6 +88,7 @@ public class WifiConnectActivity extends Activity implements OnEventReceived {
   }
 
   public void onConnectButtonClicked(View view) {
+    hud.dismiss();
     hud.setMessage("Connecting to " + ssid);
     //hud.setCancelable(false);
     hud.show();

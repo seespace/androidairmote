@@ -87,6 +87,7 @@ public final class WifiAdapter extends BaseConnection {
 
     if (mConnectingInAiR) {
       mManager.disconnect();
+      stop();
     }
 
     List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
@@ -149,7 +150,7 @@ public final class WifiAdapter extends BaseConnection {
               mNsdHelper.startDiscover();
             }
           } else {
-            stop();
+            //stop();
           }
           break;
       }
@@ -298,6 +299,8 @@ public final class WifiAdapter extends BaseConnection {
       return false;
     }
 
+    System.out.println("WifiAdapter.connect " + device.deviceName);
+
     if (mConnectThread != null) {
       mConnectThread.cancel();
       mConnectThread = null;
@@ -316,6 +319,8 @@ public final class WifiAdapter extends BaseConnection {
 
   @Override
   public void stop() {
+    System.out.println("WifiAdapter.stop");
+
     if (mConnectThread != null) {
       mConnectThread.cancel();
       mConnectThread = null;
@@ -421,13 +426,14 @@ public final class WifiAdapter extends BaseConnection {
                 .sendToTarget();
           }
         } catch (IOException e) {
-          Log.e(TAG, "DISCONNECTED", e);
-          connectionLost();
+          e.printStackTrace();
           break;
         }
       }
 
       Log.e(TAG, "DISCONNECTED");
+      connectionLost();
+      cancel();
     }
 
     /**
@@ -566,7 +572,7 @@ public final class WifiAdapter extends BaseConnection {
 
       @Override
       public void onServiceResolved(final NsdServiceInfo serviceInfo) {
-        Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
+        Log.i(TAG, "Resolve Succeeded. " + serviceInfo);
 
         mHandler.post(new Runnable() {
           @Override

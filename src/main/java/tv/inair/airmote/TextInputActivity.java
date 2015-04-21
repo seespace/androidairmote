@@ -62,16 +62,21 @@ public class TextInputActivity extends Activity implements TextWatcher {
     }
   }
 
+  private int mResponse = Proto.TextInputResponseEvent.CANCELLED;
+
   public void onOkButtonClicked(View view) {
-    Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), Proto.TextInputResponseEvent.ENDED);
-    mClient.sendEvent(event);
+    mResponse = Proto.TextInputResponseEvent.ENDED;
     finish();
   }
 
   public void onCancelButtonClicked(View view) {
-    Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), Proto.TextInputResponseEvent.CANCELLED);
-    mClient.sendEvent(event);
     finish();
+  }
+
+  @Override
+  protected void onDestroy() {
+    Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), mResponse);
+    mClient.sendEvent(event);
   }
 
   //region Implement TextWatcher
