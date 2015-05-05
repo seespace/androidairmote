@@ -77,6 +77,7 @@ public class TextInputActivity extends Activity implements TextWatcher {
   protected void onDestroy() {
     Proto.Event event = Helper.newTextInputResponseEvent(editText.getText().toString(), mResponse);
     mClient.sendEvent(event);
+    super.onDestroy();
   }
 
   //region Implement TextWatcher
