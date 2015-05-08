@@ -19,8 +19,7 @@ public class BitmapHelper {
     // Raw height and width of image
     final int height = options.outHeight;
     final int width = options.outWidth;
-//    System.out.println("BitmapHelper.calculateInSampleSize " + width + " " + height + " " + reqWidth + " " + reqHeight);
-    int inSampleSize = 2;
+    int inSampleSize = 1;
 
     if (height > reqHeight || width > reqWidth) {
 

@@ -28,7 +28,7 @@ import tv.inair.airmote.utils.BitmapHelper;
  * <p/>
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
-public class MainFragment extends Fragment implements OnEventReceived, OnSocketStateChanged, GestureControl.Listener {
+public class MainFragment extends Fragment implements View.OnClickListener, OnEventReceived, OnSocketStateChanged, GestureControl.Listener {
 
   public static final int REQUEST_WIFI_SETUP = 1;
   public static final int REQUEST_SCAN_INAIR = 2;
@@ -46,7 +46,9 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity);
+
     mClient = Application.getSocketClient();
+    mClient.register(activity);
 
     mClient.addEventReceivedListener(this);
     mClient.addSocketStateChangedListener(this);
@@ -70,43 +72,11 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
     final ImageView mode2d3d = ((ImageView) view.findViewById(R.id.mode2d3d));
     final ImageView settings = ((ImageView) view.findViewById(R.id.settings));
 
-    view.findViewById(R.id.helpBtn).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        showHelp();
-      }
-    });
-
-    view.findViewById(R.id.moreBtn).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        toggleControlView();
-      }
-    });
-
-    view.findViewById(R.id.scanBtn).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        handleScanDevices();
-        hideControlView();
-      }
-    });
-
-    view.findViewById(R.id.threeDBtn).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        switchDisplayMode();
-        hideControlView();
-      }
-    });
-
-    view.findViewById(R.id.settingBtn).setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        settingDevice();
-        hideControlView();
-      }
-    });
+    view.findViewById(R.id.helpBtn).setOnClickListener(this);
+    view.findViewById(R.id.moreBtn).setOnClickListener(this);
+    view.findViewById(R.id.scanBtn).setOnClickListener(this);
+    view.findViewById(R.id.threeDBtn).setOnClickListener(this);
+    view.findViewById(R.id.settingBtn).setOnClickListener(this);
 
     ViewTreeObserver vto = mRootView.getViewTreeObserver();
     vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -170,9 +140,6 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
         break;
 
       case REQUEST_SCAN_INAIR:
-        if (resultCode == Activity.RESULT_OK) {
-
-        }
         break;
     }
   }
@@ -294,6 +261,37 @@ public class MainFragment extends Fragment implements OnEventReceived, OnSocketS
 
   @Override
   public void onEvent() {
+    hideControlView();
+  }
+
+  @Override
+  public void onClick(View v) {
+    if (v == null || v.getId() == View.NO_ID) {
+      return;
+    }
+
+    switch (v.getId()) {
+      case R.id.helpBtn:
+        showHelp();
+        return;
+
+      case R.id.moreBtn:
+        toggleControlView();
+        return;
+
+      case R.id.scanBtn:
+        handleScanDevices();
+        break;
+
+      case R.id.threeDBtn:
+        switchDisplayMode();
+        break;
+
+      case R.id.settingBtn:
+        settingDevice();
+        break;
+    }
+
     hideControlView();
   }
   //endregion

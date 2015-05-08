@@ -52,7 +52,7 @@
     <activity
         android:name=".WifiConnectActivity"
         android:parentActivityName=".WifiListActivity"
-        android:theme="@style/ActivityStyle"
+        android:theme="@style/DialogStyle"
         android:screenOrientation="portrait">
       <meta-data
           android:name="android.support.PARENT_ACTIVITY"

@@ -40,6 +40,30 @@ public abstract class BaseConnection {
              '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof Device)) {
+        return false;
+      }
+
+      Device device = (Device) o;
+
+      if (deviceName != null ? !deviceName.equals(device.deviceName) : device.deviceName != null) {
+        return false;
+      }
+      return !(address != null ? !address.equals(device.address) : device.address != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = deviceName != null ? deviceName.hashCode() : 0;
+      result = 31 * result + (address != null ? address.hashCode() : 0);
+      return result;
+    }
 
     private static final String HOST_NAME_KEY = "#hostname";
     private static final String DISPLAY_NAME_KEY = "#displayname";
