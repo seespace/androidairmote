@@ -15,7 +15,6 @@ import inair.eventcenter.proto.Proto;
 import tv.inair.airmote.connection.OnEventReceived;
 import tv.inair.airmote.connection.OnSocketStateChanged;
 import tv.inair.airmote.connection.SocketClient;
-import tv.inair.airmote.connection.WifiAdapter;
 import tv.inair.airmote.remote.GestureControl;
 import tv.inair.airmote.utils.BitmapHelper;
 
@@ -29,10 +28,6 @@ import tv.inair.airmote.utils.BitmapHelper;
  * <p>Copyright (c) 2015 SeeSpace.co. All rights reserved.</p>
  */
 public class MainFragment extends Fragment implements View.OnClickListener, OnEventReceived, OnSocketStateChanged, GestureControl.Listener {
-
-  public static final int REQUEST_WIFI_SETUP = 1;
-  public static final int REQUEST_SCAN_INAIR = 2;
-  public static final int REQUEST_TEXT_INPUT = 3;
 
   private GestureControl mGestureControl;
   private View mRootView;
@@ -49,13 +44,6 @@ public class MainFragment extends Fragment implements View.OnClickListener, OnEv
 
     mClient = Application.getSocketClient();
     mClient.register(activity);
-
-    mClient.addEventReceivedListener(this);
-    mClient.addSocketStateChangedListener(this);
-
-    if (!mClient.isConnected()) {
-      mClient.quickConnect();
-    }
   }
 
   @Override
@@ -102,10 +90,22 @@ public class MainFragment extends Fragment implements View.OnClickListener, OnEv
       }
     });
 
-    mGestureControl = new GestureControl(getActivity(), mRootView);
+    return view;
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+
+    mGestureControl = new GestureControl(getActivity(), getView());
     mGestureControl.setListener(this);
 
-    return view;
+    mClient.addEventReceivedListener(this);
+    mClient.addSocketStateChangedListener(this);
+
+    if (!mClient.isConnected()) {
+      mClient.quickConnect();
+    }
   }
 
   @Override
@@ -128,18 +128,14 @@ public class MainFragment extends Fragment implements View.OnClickListener, OnEv
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (resultCode != Activity.RESULT_OK) {
+      return;
+    }
     switch (requestCode) {
-      case REQUEST_WIFI_SETUP:
-        if (resultCode == Activity.RESULT_OK) {
-          String ssid = data.getStringExtra(WifiListActivity.EXTRA_SSID);
-          String bssid = data.getStringExtra(WifiListActivity.EXTRA_BSSID);
-          String capabilities = data.getStringExtra(WifiListActivity.EXTRA_CAPABILITIES);
-          String password = data.getStringExtra(WifiListActivity.EXTRA_PASSWORD);
-          WifiAdapter.connectWifiTo(ssid, bssid, capabilities, password);
-        }
+      case MainActivity.REQUEST_WIFI_SETUP:
         break;
 
-      case REQUEST_SCAN_INAIR:
+      case MainActivity.REQUEST_SCAN_INAIR:
         break;
     }
   }
@@ -183,7 +179,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, OnEv
 
   private void handleScanDevices() {
     Intent i = new Intent(getActivity(), DeviceListActivity.class);
-    startActivityForResult(i, REQUEST_SCAN_INAIR);
+    startActivityForResult(i, MainActivity.REQUEST_SCAN_INAIR);
   }
 
   private void switchDisplayMode() {
@@ -203,7 +199,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, OnEv
     Intent i = new Intent(getActivity(), TextInputActivity.class);
     i.putExtra(TextInputActivity.EXTRA_REPLY_TO, event.replyTo);
     i.putExtra(TextInputActivity.EXTRA_MAX_LENGTH, textInputEvent.maxLength);
-    startActivityForResult(i, REQUEST_TEXT_INPUT);
+    startActivityForResult(i, MainActivity.REQUEST_TEXT_INPUT);
   }
 
   private void processWebView(Proto.Event event, boolean isWebView) {
@@ -250,11 +246,11 @@ public class MainFragment extends Fragment implements View.OnClickListener, OnEv
     if (!isVisible()) {
       return;
     }
-    if (connect) {
+    if (connect && mGuideImage.getVisibility() == View.VISIBLE) {
       mGuideImage.setVisibility(View.GONE);
       if (mClient.isInSettingMode()) {
         Intent i = new Intent(getActivity(), WifiListActivity.class);
-        startActivityForResult(i, REQUEST_WIFI_SETUP);
+        startActivityForResult(i, MainActivity.REQUEST_WIFI_SETUP);
       }
     }
   }

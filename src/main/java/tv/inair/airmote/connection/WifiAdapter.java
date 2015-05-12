@@ -7,6 +7,8 @@ import android.content.IntentFilter;
 import android.net.NetworkInfo;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.net.wifi.ScanResult;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -15,7 +17,6 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -87,9 +88,34 @@ public final class WifiAdapter extends BaseConnection {
 
   private SocketClient mClient;
 
+  private boolean mFindWifi = false;
+  private boolean mConnectInAiR = false;
+
+  public static boolean isConnecting(SupplicantState state) {
+    switch(state) {
+      case AUTHENTICATING:
+      case ASSOCIATING:
+      case ASSOCIATED:
+      case FOUR_WAY_HANDSHAKE:
+      case GROUP_HANDSHAKE:
+      case COMPLETED:
+        return true;
+      case DISCONNECTED:
+      case INTERFACE_DISABLED:
+      case INACTIVE:
+      case SCANNING:
+      case DORMANT:
+      case UNINITIALIZED:
+      case INVALID:
+        return false;
+      default:
+        throw new IllegalArgumentException("Unknown supplicant state");
+    }
+  }
+
   private void _connectToInAiR() {
     if (!mSetupInAiR) {
-      System.out.println("WifiAdapter._connectToInAiR " + Thread.currentThread());
+      stop();
       mSetupInAiR = true;
       if (!mManager.isWifiEnabled()) {
         mManager.setWifiEnabled(true);
@@ -97,39 +123,30 @@ public final class WifiAdapter extends BaseConnection {
       mNsdHelper.stopDiscover();
 
       WifiInfo wifiInfo = mManager.getConnectionInfo();
-      if (wifiInfo != null && _checkIfInAiR(wifiInfo.getSSID())) {
+      if (wifiInfo != null && isConnecting(wifiInfo.getSupplicantState()) && _checkIfInAiR(wifiInfo.getSSID())) {
+        System.out.println("WifiAdapter._connectToInAiR");
         connect(INAIR_DEVICE);
-        return;
-      }
-
-      int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
-      if (netId != -1) {
-        mManager.enableNetwork(netId, true);
       } else {
-        Log.d(TAG, "WWWWWWW");
+        mFindWifi = true;
+        mManager.startScan();
       }
-    } else {
-      mManager.enableNetwork(INAIR_WIFI_CONFIG.networkId, true);
     }
   }
 
   private void _disableInAirNetwork() {
-    mNsdHelper.stopDiscover();
-    mManager.setWifiEnabled(true);
-    mManager.disconnect();
-
-    List<WifiConfiguration> configs = mManager.getConfiguredNetworks();
-    if (configs != null) {
-      for (int i = 0; i < configs.size(); i++) {
-        WifiConfiguration config = configs.get(i);
-        if (_checkIfInAiR(config.SSID)) {
-          mManager.removeNetwork(config.networkId);
-        }
+    if (INAIR_WIFI_CONFIG.networkId != -1) {
+      mSetupInAiR = false;
+      mNsdHelper.stopDiscover();
+      mManager.setWifiEnabled(true);
+      mManager.disconnect();
+      mManager.removeNetwork(INAIR_WIFI_CONFIG.networkId);
+      for (WifiConfiguration wifi : mManager.getConfiguredNetworks()) {
+        mManager.enableNetwork(wifi.networkId, false);
       }
+      mManager.reconnect();
       mManager.saveConfiguration();
+      INAIR_WIFI_CONFIG.networkId = -1;
     }
-
-    mSetupInAiR = false;
   }
 
   private boolean _checkIfInAiR(String ssid) {
@@ -142,16 +159,47 @@ public final class WifiAdapter extends BaseConnection {
       String action = intent.getAction();
 
       switch (action) {
+        case WifiManager.SCAN_RESULTS_AVAILABLE_ACTION:
+          if (mSetupInAiR && mFindWifi) {
+            //System.out.println(" ** " + action);
+            List<ScanResult> results = mManager.getScanResults();
+            for (ScanResult res : results) {
+              if (_checkIfInAiR("\"" + res.SSID + "\"")) {
+                mFindWifi = false;
+                int netId = mManager.addNetwork(INAIR_WIFI_CONFIG);
+                if (netId != -1) {
+                  INAIR_WIFI_CONFIG.networkId = netId;
+                  mManager.disconnect();
+                  mManager.enableNetwork(netId, true);
+                } else {
+                  Log.d(TAG, "WTF");
+                }
+                //System.out.println("FOUND INAIR " + netId + " " + INAIR_WIFI_CONFIG.networkId);
+                break;
+              }
+            }
+          }
+          break;
+
         case WifiManager.NETWORK_STATE_CHANGED_ACTION:
           NetworkInfo networkInfo = intent.getParcelableExtra(WifiManager.EXTRA_NETWORK_INFO);
           if (networkInfo.isConnected()) {
             if (mSetupInAiR) {
-              WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-              System.out.println(" ++ " + action + " " + wifiInfo.getSSID());
-              if (_checkIfInAiR(wifiInfo.getSSID())) {
-                connect(INAIR_DEVICE);
-              } else {
-                _connectToInAiR();
+              if (!mFindWifi) {
+                WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
+                //System.out.println(" ++ " + action + " " + mFindWifi + " " + wifiInfo.getSSID() + " " + mConnectInAiR);
+                if ("<unknown ssid>".equals(wifiInfo.getSSID())) {
+                  return;
+                }
+                if (_checkIfInAiR(wifiInfo.getSSID())) {
+                  if (!mConnectInAiR) {
+                    mConnectInAiR = true;
+                    mClient.connectTo(INAIR_DEVICE);
+                  }
+                } else {
+                  mFindWifi = true;
+                  mManager.startScan();
+                }
               }
             } else if (mQuickConnect) {
               mNsdHelper.startDiscover();
@@ -203,6 +251,7 @@ public final class WifiAdapter extends BaseConnection {
     mManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
     IntentFilter filter = new IntentFilter();
+    filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
     filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
     context.registerReceiver(mReceiver, filter);
 
@@ -257,6 +306,8 @@ public final class WifiAdapter extends BaseConnection {
 
   @Override
   protected void connectionFailed() {
+    System.out.println("WifiAdapter.connectionFailed");
+    mConnectInAiR = false;
     if (mClient.isInSettingMode() && mSetupInAiR) {
       _connectToInAiR();
     } else {
@@ -264,35 +315,42 @@ public final class WifiAdapter extends BaseConnection {
     }
   }
 
-  public static void connectWifiTo(String ssid, String bssid, String capabilities, String password) {
-    WifiConfiguration config = new WifiConfiguration();
-    config.SSID = "\"" + ssid + "\"";
-    config.BSSID = bssid;
-
-    if (capabilities.contains("PSK")) {
-      config.preSharedKey = "\"" + password + "\"";
-    } else if (capabilities.contains("WEP")) {
-      config.wepKeys[0] = "\"" + password + "\"";
-      config.wepTxKeyIndex = 0;
-      config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-      config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
-    } else {
-      config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
-    }
-
-    WifiAdapter ins = getInstance();
-    ins._disableInAirNetwork();
-
-    Log.d(TAG, "connectTo " + ssid + " " + bssid + " " + capabilities + " " + password);
-    ins.mManager.setWifiEnabled(true);
-
-    int netId = ins.mManager.addNetwork(config);
-    ins.mManager.disconnect();
-    ins.mManager.enableNetwork(netId, false);
-    ins.mManager.reconnect();
-    ins.mManager.saveConfiguration();
-    getInstance().startQuickConnect();
+  @Override
+  protected void connectionLost() {
+    System.out.println("WifiAdapter.connectionLost");
+    mConnectInAiR = false;
+    super.connectionLost();
   }
+
+  //public static void connectWifiTo(String ssid, String bssid, String capabilities, String password) {
+  //  WifiConfiguration config = new WifiConfiguration();
+  //  config.SSID = "\"" + ssid + "\"";
+  //  config.BSSID = bssid;
+  //
+  //  if (capabilities.contains("PSK")) {
+  //    config.preSharedKey = "\"" + password + "\"";
+  //  } else if (capabilities.contains("WEP")) {
+  //    config.wepKeys[0] = "\"" + password + "\"";
+  //    config.wepTxKeyIndex = 0;
+  //    config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+  //    config.allowedGroupCiphers.set(WifiConfiguration.GroupCipher.WEP40);
+  //  } else {
+  //    config.allowedKeyManagement.set(WifiConfiguration.KeyMgmt.NONE);
+  //  }
+  //
+  //  WifiAdapter ins = getInstance();
+  //  ins._disableInAirNetwork();
+  //
+  //  Log.d(TAG, "connectTo " + ssid + " " + bssid + " " + capabilities + " " + password);
+  //  ins.mManager.setWifiEnabled(true);
+  //
+  //  int netId = ins.mManager.addNetwork(config);
+  //  ins.mManager.disconnect();
+  //  ins.mManager.enableNetwork(netId, false);
+  //  ins.mManager.reconnect();
+  //  ins.mManager.saveConfiguration();
+  //  getInstance().startQuickConnect();
+  //}
 
   @Override
   public synchronized boolean connect(Device device) {
@@ -316,6 +374,10 @@ public final class WifiAdapter extends BaseConnection {
     if (mConnectedThread != null) {
       mConnectedThread.cancel();
       mConnectedThread = null;
+    }
+
+    if (INAIR_DEVICE == device) {
+      mConnectInAiR = true;
     }
 
     System.out.println("WifiAdapter.connect " + device);
@@ -381,7 +443,7 @@ public final class WifiAdapter extends BaseConnection {
           e.printStackTrace();
           if (mClient.isInSettingMode() && mSetupInAiR) {
             try {
-              sleep(100);
+              sleep(200);
             } catch (InterruptedException ignored) {
             }
           } else {
@@ -393,6 +455,7 @@ public final class WifiAdapter extends BaseConnection {
 
       synchronized (WifiAdapter.this) {
         mConnectThread = null;
+        mConnectInAiR = false;
       }
 
       connected(socket, mDevice);
@@ -407,20 +470,12 @@ public final class WifiAdapter extends BaseConnection {
   private class ConnectedThread extends Thread {
     private final Socket mmSocket;
     private InputStream mDataIS;
-    private OutputStream mDataOS;
 
     public ConnectedThread(Socket socket) {
       Log.d(TAG, "CREATE ConnectedThread");
       mmSocket = socket;
 
       // Get the Socket input and output streams
-
-      try {
-        mDataOS = socket.getOutputStream();
-      } catch (IOException e) {
-        Log.e(TAG, "temp sockets not created", e);
-      }
-
       try {
         mDataIS = socket.getInputStream();
       } catch (IOException e) {
@@ -436,9 +491,10 @@ public final class WifiAdapter extends BaseConnection {
       int length;
 
       // Keep listening to the InputStream while connected
-      while (!isInterrupted()) {
+      while (!isInterrupted() && mmSocket.isConnected()) {
         try {
           if (mDataIS.available() > 0) {
+            //System.out.println("AVAIL " + mDataIS.available());
             length = is.readInt();
             is.readFully(buffer, 0, length);
 
@@ -463,7 +519,7 @@ public final class WifiAdapter extends BaseConnection {
      */
     public void write(byte[] buffer) {
       try {
-        DataOutputStream os = new DataOutputStream(mDataOS);
+        final OutputStream os = mmSocket.getOutputStream();
         os.write(buffer);
         os.flush();
       } catch (IOException e) {
@@ -599,7 +655,7 @@ public final class WifiAdapter extends BaseConnection {
           @Override
           public void run() {
             currentDevice.address = serviceInfo.getHost().getHostAddress();
-            connect(currentDevice);
+            mClient.connectTo(currentDevice);
             currentDevice = null;
           }
         });

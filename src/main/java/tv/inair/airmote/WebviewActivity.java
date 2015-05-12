@@ -2,11 +2,11 @@ package tv.inair.airmote;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.KeyEvent;
-import android.view.Window;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -39,9 +39,6 @@ public class WebViewActivity extends Activity implements OnEventReceived {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
-    getWindow().requestFeature(Window.FEATURE_PROGRESS);
-
     mClient = Application.getSocketClient();
 
     ActionBar actionBar = getActionBar();
@@ -62,30 +59,20 @@ public class WebViewActivity extends Activity implements OnEventReceived {
     st.setJavaScriptEnabled(true);
 
     webView.setWebChromeClient(new WebChromeClient() {
+      ProgressDialog mProgress = new ProgressDialog(WebViewActivity.this);
       public void onProgressChanged(WebView view, int progress) {
-        // Activities and WebViews measure progress with different scales.
-        // The progress meter will automatically disappear when we reach 100%
-        WebViewActivity.this.setProgress(progress * 100);
+        if (progress < 100) {
+          mProgress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+          mProgress.setProgress(progress);
+          mProgress.show();
+        } else {
+          mProgress.dismiss();
+        }
       }
     });
 
     webView.setWebViewClient(new Client());
     webView.loadUrl(url);
-  }
-
-  @Override
-  protected void onResume() {
-    super.onResume();
-    //View decorView = getWindow().getDecorView();
-    //// Hide the status bar.
-    //int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
-    //decorView.setSystemUiVisibility(uiOptions);
-    //// Remember that you should never show the action bar if the
-    //// status bar is hidden, so hide that too if necessary.
-    //ActionBar actionBar = getActionBar();
-    //if (actionBar != null) {
-    //  actionBar.hide();
-    //}
   }
 
   private void dismissActivity() {

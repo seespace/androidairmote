@@ -35,23 +35,27 @@ import android.widget.TextView;
 
 public class MainActivity extends FragmentActivity {
 
-  MainFragment fragment;
+  public static final int REQUEST_WIFI_SETUP = 1;
+  public static final int REQUEST_WIFI_CONNECT = 2;
+  public static final int REQUEST_SCAN_INAIR = 10;
+  public static final int REQUEST_TEXT_INPUT = 20;
+
+  private MainFragment mMainFragment;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
-    Application.getSocketClient().register(this);
     Application.setStatusView(((TextView) findViewById(R.id.status)));
 
     if (savedInstanceState == null) {
       FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-      if (fragment == null) {
-        fragment = new MainFragment();
-        fragment.setRetainInstance(true);
+      if (mMainFragment == null) {
+        mMainFragment = new MainFragment();
+        mMainFragment.setRetainInstance(true);
       }
-      transaction.replace(R.id.fragment, fragment);
+      transaction.add(R.id.fragment, mMainFragment);
       transaction.commit();
     }
   }
@@ -59,7 +63,6 @@ public class MainActivity extends FragmentActivity {
   @Override
   protected void onResume() {
     super.onResume();
-
     View decorView = getWindow().getDecorView();
     // Hide the status bar.
     int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
@@ -70,12 +73,11 @@ public class MainActivity extends FragmentActivity {
     if (actionBar != null) {
       actionBar.hide();
     }
-
   }
 
   @Override
   public void onBackPressed() {
-    if (fragment != null && !fragment.onBackPressed()) {
+    if (mMainFragment != null && !mMainFragment.onBackPressed()) {
       super.onBackPressed();
     }
   }

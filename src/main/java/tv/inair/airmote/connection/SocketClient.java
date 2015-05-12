@@ -22,7 +22,6 @@ import tv.inair.airmote.Application;
 public final class SocketClient {
 
   private static final String TAG = "SocketClient";
-
   public static final String STOP_MESSAGE = "STOP_SETUP";
 
   //region Description
@@ -35,14 +34,16 @@ public final class SocketClient {
       switch (action) {
         case Intent.ACTION_POWER_CONNECTED: {
           mUSBConnected = true;
-          Application.notify("USB Connected", Application.Status.SUCCESS);
           quickScanAndConnect();
           break;
         }
 
         case Intent.ACTION_POWER_DISCONNECTED:
           mUSBConnected = false;
-          stopScanAndQuickConnect();
+          if (mSettingUp) {
+            Application.notify("No device connect", Application.Status.ERROR);
+            stopScanAndQuickConnect();
+          }
           break;
 
         case Intent.ACTION_BATTERY_CHANGED: {
@@ -60,13 +61,14 @@ public final class SocketClient {
     if (!mIsPC || !mUSBConnected || !mSettingUp) {
       return;
     }
+    Application.notify("USB Connected", Application.Status.SUCCESS);
     quickConnect();
   }
 
   private void stopScanAndQuickConnect() {
     onStateChanged(false, STOP_MESSAGE);
-    if (mSettingUp) {
-      Application.notify("No device connect", Application.Status.ERROR);
+    if (!mSettingUp) {
+      Application.notify("Disconnected", Application.Status.ERROR);
     }
     mConnection.stopQuickConnect();
   }
@@ -76,13 +78,11 @@ public final class SocketClient {
     if (!setup) {
       stopScanAndQuickConnect();
     } else {
-      Application.notify("Connecting ...", Application.Status.ERROR);
-      mConnection.startQuickConnect();
+      quickConnect();
     }
   }
 
   public void quickConnect() {
-    Application.notify("Connecting ...", Application.Status.NORMAL);
     mConnection.startQuickConnect();
   }
 

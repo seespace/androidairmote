@@ -1,6 +1,5 @@
 package tv.inair.airmote;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -23,24 +22,17 @@ public class WifiConnectActivity extends Activity {
   public static final String EXTRA_PASSWORD = "#wca_password";
 
   private EditText passwordView;
-  private String ssid;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
-    ActionBar actionBar = getActionBar();
-    if (actionBar != null) {
-      actionBar.setDisplayHomeAsUpEnabled(true);
-    }
+    setContentView(R.layout.activity_connect);
+    setTitle("Enter Password");
 
     setResult(Activity.RESULT_CANCELED);
 
-    setTitle("Enter Password");
-    setContentView(R.layout.activity_connect);
-
     Intent i = getIntent();
-    ssid = i.getStringExtra(EXTRA_SSID);
+    String ssid = i.getStringExtra(EXTRA_SSID);
 
     passwordView = ((EditText) findViewById(R.id.editText));
     TextView des = ((TextView) findViewById(R.id.description));
@@ -49,8 +41,7 @@ public class WifiConnectActivity extends Activity {
   }
 
   public void onConnectButtonClicked(View view) {
-    Intent res = new Intent();
-    res.putExtra(EXTRA_SSID, ssid);
+    Intent res = getIntent();
     res.putExtra(EXTRA_PASSWORD, passwordView.getText().toString());
     setResult(Activity.RESULT_OK, res);
     finish();
