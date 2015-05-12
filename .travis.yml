@@ -18,6 +18,7 @@ android:
     - platform-tools
     # Android Support for backcompat
     - extra-android-support
+    - extra-android-m2repository
     # EABI
     - sys-img-armeabi-v7a-android-22
 
