@@ -1,17 +1,21 @@
 buildscript {
   repositories {
+    jcenter()
     maven { url 'https://maven.fabric.io/public' }
   }
 
   dependencies {
     classpath 'io.fabric.tools:gradle:1.15.2'
+    classpath "com.android.tools.build:gradle:1.1.0"
   }
 }
+
 apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 repositories {
   maven { url 'https://maven.fabric.io/public' }
+  jcenter()
 }
 
 android {

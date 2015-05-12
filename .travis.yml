@@ -1,7 +1,8 @@
 # kickstart travis.
 language: android
-before_install: 
-after_success:
+
+notifications:
+  email: false
 
 env:
   matrix:
