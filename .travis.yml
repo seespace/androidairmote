@@ -17,6 +17,8 @@ android:
     - platform-tools
     # Android Support for backcompat
     - extra-android-support
+    # EABI
+    - sys-img-armeabi-v7a-android-22
 
 before_script: 
   - cp build.sample.gradle build.gradle
