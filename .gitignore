@@ -10,3 +10,5 @@
 /gradle
 gradlew*
 product
+
+build.gradle

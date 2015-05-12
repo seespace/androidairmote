@@ -29,16 +29,6 @@ android {
     targetSdkVersion 22
     versionCode 8
     versionName "0.9.0"
-    signingConfig signingConfigs.debug
-  }
-
-  signingConfigs {
-    debug {
-      storePassword 's33spac3'
-      keyAlias 'SeeSpace'
-      keyPassword 's33spac3'
-      storeFile file('../../workspace-airmote/keystore/seespace.jks')
-    }
   }
 
 //  buildTypes {
