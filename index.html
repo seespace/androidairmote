@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Android Airmote by seespace</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Android Airmote</h1>
+        <p>Remote Control Application for InAir (Android)</p>
+
+        <p class="view"><a href="https://github.com/seespace/androidairmote">View the Project on GitHub <small>seespace/androidairmote</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/seespace/androidairmote/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/seespace/androidairmote/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/seespace/androidairmote">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="android-airmote" class="anchor" href="#android-airmote" aria-hidden="true"><span class="octicon octicon-link"></span></a>Android Airmote</h1>
+
+<p><a href="https://twitter.com/longseespace"><img src="https://img.shields.io/badge/contact-%40longseespace-blue.svg" alt="Contact @longseespace"></a>
+<a href="#license"><img src="https://img.shields.io/apm/l/vim-mode.svg" alt="License MIT"></a>
+<a href="https://travis-ci.org/seespace/androidairmote"><img src="https://travis-ci.org/seespace/androidairmote.svg?branch=develop" alt="Build Status"></a></p>
+
+<p>Remote Control Application for InAir system (Android)</p>
+
+<h3>
+<a id="how-to-build" class="anchor" href="#how-to-build" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to build?</h3>
+
+<ul>
+<li>Download source code. <code>git clone git@github.com:seespace/androidairmote.git</code>
+</li>
+<li>Create build.gradle file, modify if neccessary. <code>cp build.sample.gradle build.gradle</code>
+</li>
+<li>In Android Studio, open it as a new project</li>
+<li>Build!</li>
+</ul>
+
+<h3>
+<a id="how-to-run" class="anchor" href="#how-to-run" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to run?</h3>
+
+<p>Note: Since Android Emulator maintains a virtual ethernet LAN, sending events from device to emulator is not possible unless you have a <a href="http://rxwen.blogspot.com/2009/11/adb-for-remote-connections.html">modified adb</a>.</p>
+
+<ul>
+<li>Start InAir emulator and open an InAir application.</li>
+<li>You need to forward port <strong>8989</strong> on the emulator to same port on the host machine: <code>adb forward tcp:8989 tcp:8989</code>
+</li>
+<li>Start Android emulator and open Airmote application, enter <code>10.0.2.2</code> as AirServer IP address.</li>
+</ul>
+
+<h3>
+<a id="supports" class="anchor" href="#supports" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supports</h3>
+
+<ul>
+<li>Bug reporting: file an issue in this repo</li>
+<li>Discussions/questions: create new topic at <a href="http://developer.inair.tv/category/13/remote-control-applications-forum">InAir Developer Forums</a>
+</li>
+</ul>
+
+<h3>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h3>
+
+<p>The MIT License</p>
+
+<p>Copyright (c) 2014, SeeSpace. All rights reserved.</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/seespace">seespace</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
